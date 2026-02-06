@@ -249,8 +249,8 @@ export async function getUserPredictions(userId: string) {
  * Get all matches with user's predictions (if any)
  */
 export async function getMatchesWithUserPredictions(
-  userId?: string,
-  stageSlug?: string
+  userId?: string | null,
+  stageSlug?: string | null
 ) {
   let whereConditions = undefined;
 
@@ -409,10 +409,54 @@ export async function upsertUserFromClerk(clerkData: {
 }
 
 /**
- * Get match by ID with full details
+ * Ensure user exists in database (lazy sync pattern)
+ * Fetches user data from Clerk and creates/updates database record
+ * Call this before any database operation that requires userId
  */
-export async function getMatchById(matchId: number) {
-  return await db.query.matches.findFirst({
+export async function ensureUserExists(userId: string) {
+  // Check if user already exists
+  const existingUser = await db.query.users.findFirst({
+    where: eq(users.userId, userId),
+  });
+
+  if (existingUser) {
+    return existingUser;
+  }
+
+  // User doesn't exist, fetch from Clerk and create
+  // Import clerkClient dynamically to avoid circular dependency
+  const { clerkClient } = await import('@clerk/nextjs/server');
+
+  try {
+    const clerkUser = await (await clerkClient()).users.getUser(userId);
+
+    const primaryEmail = clerkUser.emailAddresses.find(
+      (email) => email.id === clerkUser.primaryEmailAddressId
+    );
+
+    if (!primaryEmail) {
+      throw new Error('No primary email found for user');
+    }
+
+    // Create user in database
+    return await upsertUserFromClerk({
+      id: clerkUser.id,
+      email: primaryEmail.emailAddress,
+      username: clerkUser.username || undefined,
+      firstName: clerkUser.firstName || undefined,
+      lastName: clerkUser.lastName || undefined,
+    });
+  } catch (error) {
+    console.error('Error fetching user from Clerk:', error);
+    throw new Error('Failed to sync user account');
+  }
+}
+
+/**
+ * Get match by ID with full details and optional user prediction
+ */
+export async function getMatchById(matchId: number, userId?: string) {
+  const match = await db.query.matches.findFirst({
     where: eq(matches.id, matchId),
     with: {
       homeTeam: true,
@@ -421,6 +465,30 @@ export async function getMatchById(matchId: number) {
       stage: true,
     },
   });
+
+  if (!match) {
+    return null;
+  }
+
+  if (!userId) {
+    return {
+      ...match,
+      userPrediction: null,
+    };
+  }
+
+  // Get user's prediction for this match
+  const userPrediction = await db.query.predictions.findFirst({
+    where: and(
+      eq(predictions.userId, userId),
+      eq(predictions.matchId, matchId)
+    ),
+  });
+
+  return {
+    ...match,
+    userPrediction: userPrediction || null,
+  };
 }
 
 /**

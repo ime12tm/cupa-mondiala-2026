@@ -1,65 +1,142 @@
-import Image from "next/image";
+import Link from 'next/link';
+import { auth } from '@clerk/nextjs/server';
+import { db } from '@/db';
+import { matches } from '@/db/schema';
+import { and, eq, gt } from 'drizzle-orm';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { formatMatchDate, formatMatchTime } from '@/lib/date-utils';
 
-export default function Home() {
+export default async function HomePage() {
+  const { userId } = await auth();
+
+  // Get next 5 upcoming matches
+  const upcomingMatches = await db.query.matches.findMany({
+    where: eq(matches.status, 'scheduled'),
+    orderBy: (matches, { asc }) => [asc(matches.scheduledAt)],
+    limit: 5,
+    with: {
+      homeTeam: true,
+      awayTeam: true,
+      venue: true,
+      stage: true,
+    },
+  });
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <div className="container mx-auto px-4 py-12">
+      <div className="max-w-4xl mx-auto">
+        {/* Hero Section */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4">
+            FIFA World Cup 2026
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-xl text-foreground/60 mb-8">
+            Predict match results, earn points, and compete with fans worldwide
           </p>
+          {!userId && (
+            <div className="flex gap-4 justify-center">
+              <Link href="/matches">
+                <Button size="lg">View Matches</Button>
+              </Link>
+              <Link href="/leaderboard">
+                <Button size="lg" variant="secondary">
+                  Leaderboard
+                </Button>
+              </Link>
+            </div>
+          )}
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        {/* How It Works */}
+        <div className="grid md:grid-cols-3 gap-6 mb-12">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">1. Make Predictions</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-foreground/60">
+              Predict the score for every match before kickoff
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">2. Earn Points</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-foreground/60">
+              Get 3 points for exact scores, 1 point for correct results
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">3. Climb the Ranks</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-foreground/60">
+              Compete on the leaderboard and prove your football knowledge
+            </CardContent>
+          </Card>
         </div>
-      </main>
+
+        {/* Upcoming Matches */}
+        {upcomingMatches.length > 0 && (
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold">Upcoming Matches</h2>
+              <Link href="/matches">
+                <Button variant="ghost">View All</Button>
+              </Link>
+            </div>
+            <div className="space-y-4">
+              {upcomingMatches.map((match) => (
+                <Link key={match.id} href={`/matches/${match.id}`}>
+                  <Card className="hover:bg-foreground/5 transition-colors cursor-pointer">
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="text-sm text-foreground/60 mb-2">
+                            {match.stage.name} • {match.venue.city}
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <div className="text-right flex-1">
+                              <div className="font-semibold">
+                                {match.homeTeam?.name || 'TBD'}
+                              </div>
+                            </div>
+                            <div className="text-2xl font-bold text-foreground/40">
+                              vs
+                            </div>
+                            <div className="text-left flex-1">
+                              <div className="font-semibold">
+                                {match.awayTeam?.name || 'TBD'}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm text-foreground/60">
+                            {formatMatchDate(new Date(match.scheduledAt))}
+                          </div>
+                          <div className="text-sm font-medium">
+                            {formatMatchTime(new Date(match.scheduledAt), match.venue.timezone)}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* CTA for logged in users */}
+        {userId && upcomingMatches.length > 0 && (
+          <div className="mt-8 text-center">
+            <Link href="/matches">
+              <Button size="lg">Make Your Predictions</Button>
+            </Link>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
