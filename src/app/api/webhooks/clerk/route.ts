@@ -94,7 +94,7 @@ export async function POST(req: Request) {
       // Soft delete: we keep predictions but remove user data
       // Or hard delete: cascade will remove all predictions
       // Currently set to cascade delete in schema
-      await db.delete(users).where(eq(users.id, id));
+      await db.delete(users).where(eq(users.userId, id));
 
       console.log(`User ${id} deleted from database`);
     } catch (error) {

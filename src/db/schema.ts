@@ -14,7 +14,7 @@ import { relations } from "drizzle-orm";
 export const users = pgTable(
   "users",
   {
-    id: text("id").primaryKey(), // Clerk user ID
+    userId: text("user_id").primaryKey(), // Clerk user ID
     email: text("email").notNull().unique(),
     username: text("username"),
     displayName: text("display_name"),
@@ -124,7 +124,7 @@ export const predictions = pgTable(
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     userId: text("user_id")
       .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
+      .references(() => users.userId, { onDelete: "cascade" }),
     matchId: integer("match_id")
       .notNull()
       .references(() => matches.id, { onDelete: "cascade" }),
@@ -153,7 +153,7 @@ export const leaderboardSnapshots = pgTable(
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     userId: text("user_id")
       .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
+      .references(() => users.userId, { onDelete: "cascade" }),
     stageId: integer("stage_id").references(() => tournamentStages.id), // null for overall
     totalPoints: integer("total_points").notNull(),
     rank: integer("rank").notNull(),
@@ -223,7 +223,7 @@ export const matchesRelations = relations(matches, ({ one, many }) => ({
 export const predictionsRelations = relations(predictions, ({ one }) => ({
   user: one(users, {
     fields: [predictions.userId],
-    references: [users.id],
+    references: [users.userId],
   }),
   match: one(matches, {
     fields: [predictions.matchId],
@@ -236,7 +236,7 @@ export const leaderboardSnapshotsRelations = relations(
   ({ one }) => ({
     user: one(users, {
       fields: [leaderboardSnapshots.userId],
-      references: [users.id],
+      references: [users.userId],
     }),
     stage: one(tournamentStages, {
       fields: [leaderboardSnapshots.stageId],

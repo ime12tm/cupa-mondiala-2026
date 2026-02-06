@@ -1,5 +1,5 @@
 {
-  "id": "072ba08a-ffca-418f-ae02-a34c3f0a8a12",
+  "id": "5ccb41c0-66a7-4c68-a736-8362756390ad",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -137,15 +137,15 @@
         }
       },
       "foreignKeys": {
-        "leaderboard_snapshots_user_id_users_id_fk": {
-          "name": "leaderboard_snapshots_user_id_users_id_fk",
+        "leaderboard_snapshots_user_id_users_user_id_fk": {
+          "name": "leaderboard_snapshots_user_id_users_user_id_fk",
           "tableFrom": "leaderboard_snapshots",
           "tableTo": "users",
           "columnsFrom": [
             "user_id"
           ],
           "columnsTo": [
-            "id"
+            "user_id"
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -605,15 +605,15 @@
         }
       },
       "foreignKeys": {
-        "predictions_user_id_users_id_fk": {
-          "name": "predictions_user_id_users_id_fk",
+        "predictions_user_id_users_user_id_fk": {
+          "name": "predictions_user_id_users_user_id_fk",
           "tableFrom": "predictions",
           "tableTo": "users",
           "columnsFrom": [
             "user_id"
           ],
           "columnsTo": [
-            "id"
+            "user_id"
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -833,8 +833,8 @@
       "name": "users",
       "schema": "",
       "columns": {
-        "id": {
-          "name": "id",
+        "user_id": {
+          "name": "user_id",
           "type": "text",
           "primaryKey": true,
           "notNull": true

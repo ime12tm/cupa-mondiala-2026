@@ -148,7 +148,7 @@ export async function calculatePointsForMatch(matchId: number) {
         totalPoints: sql`${users.totalPoints} + ${points}`,
         updatedAt: new Date(),
       })
-      .where(eq(users.id, prediction.userId));
+      .where(eq(users.userId, prediction.userId));
   }
 
   return matchPredictions.length;
@@ -336,7 +336,7 @@ export async function getLeaderboard(limit: number = 100) {
  */
 export async function getUserStats(userId: string) {
   const user = await db.query.users.findFirst({
-    where: eq(users.id, userId),
+    where: eq(users.userId, userId),
   });
 
   if (!user) {
@@ -388,14 +388,14 @@ export async function upsertUserFromClerk(clerkData: {
   const [user] = await db
     .insert(users)
     .values({
-      id: clerkData.id,
+      userId: clerkData.id,
       email: clerkData.email,
       username: clerkData.username || null,
       displayName,
       totalPoints: 0,
     })
     .onConflictDoUpdate({
-      target: users.id,
+      target: users.userId,
       set: {
         email: clerkData.email,
         username: clerkData.username || null,
