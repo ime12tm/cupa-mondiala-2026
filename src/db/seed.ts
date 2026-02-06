@@ -28,37 +28,31 @@ async function seed() {
       name: "Group Stage",
       slug: "group_stage",
       sortOrder: 1,
-      pointsMultiplier: 1.0,
     },
     {
       name: "Round of 16",
       slug: "round_of_16",
       sortOrder: 2,
-      pointsMultiplier: 1.5,
     },
     {
       name: "Quarter-finals",
       slug: "quarter_finals",
       sortOrder: 3,
-      pointsMultiplier: 2.0,
     },
     {
       name: "Semi-finals",
       slug: "semi_finals",
       sortOrder: 4,
-      pointsMultiplier: 2.5,
     },
     {
       name: "Third Place",
       slug: "third_place",
       sortOrder: 5,
-      pointsMultiplier: 2.5,
     },
     {
       name: "Final",
       slug: "final",
       sortOrder: 6,
-      pointsMultiplier: 3.0,
     },
   ];
   await db.insert(tournamentStages).values(stages);

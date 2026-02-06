@@ -1,20 +1,15 @@
 import Link from 'next/link';
 import { auth } from '@clerk/nextjs/server';
 import { db } from '@/db';
-import { matches } from '@/db/schema';
-import { and, eq, gt } from 'drizzle-orm';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { formatMatchDate, formatMatchTime } from '@/lib/date-utils';
 
 export default async function HomePage() {
   const { userId } = await auth();
 
-  // Get next 5 upcoming matches
-  const upcomingMatches = await db.query.matches.findMany({
-    where: eq(matches.status, 'scheduled'),
+  // Get all matches ordered by scheduled date
+  const allMatches = await db.query.matches.findMany({
     orderBy: (matches, { asc }) => [asc(matches.scheduledAt)],
-    limit: 5,
     with: {
       homeTeam: true,
       awayTeam: true,
@@ -23,119 +18,93 @@ export default async function HomePage() {
     },
   });
 
+  const getStatusBadge = (status: 'scheduled' | 'live' | 'finished') => {
+    const variants = {
+      scheduled: { variant: 'default' as const, label: 'Scheduled' },
+      live: { variant: 'danger' as const, label: 'Live' },
+      finished: { variant: 'success' as const, label: 'Finished' },
+    };
+    const { variant, label } = variants[status];
+    return <Badge variant={variant} className="text-xs">{label}</Badge>;
+  };
+
   return (
-    <div className="container mx-auto px-4 py-12">
-      <div className="max-w-4xl mx-auto">
+    <div className="container mx-auto px-4 py-8">
+      <div className="max-w-6xl mx-auto">
         {/* Hero Section */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl md:text-4xl font-bold mb-2">
             FIFA World Cup 2026
           </h1>
-          <p className="text-xl text-foreground/60 mb-8">
+          <p className="text-lg text-foreground/60 mb-6">
             Predict match results, earn points, and compete with fans worldwide
           </p>
-          {!userId && (
-            <div className="flex gap-4 justify-center">
-              <Link href="/matches">
-                <Button size="lg">View Matches</Button>
-              </Link>
-              <Link href="/leaderboard">
-                <Button size="lg" variant="secondary">
-                  Leaderboard
-                </Button>
-              </Link>
+          <div className="flex gap-3 justify-center text-sm">
+            <div className="bg-foreground/5 px-4 py-2 rounded-lg">
+              <span className="font-semibold">3 points</span> for exact scores
             </div>
-          )}
+            <div className="bg-foreground/5 px-4 py-2 rounded-lg">
+              <span className="font-semibold">1 point</span> for correct results
+            </div>
+          </div>
         </div>
 
-        {/* How It Works */}
-        <div className="grid md:grid-cols-3 gap-6 mb-12">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">1. Make Predictions</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm text-foreground/60">
-              Predict the score for every match before kickoff
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">2. Earn Points</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm text-foreground/60">
-              Get 3 points for exact scores, 1 point for correct results
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">3. Climb the Ranks</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm text-foreground/60">
-              Compete on the leaderboard and prove your football knowledge
-            </CardContent>
-          </Card>
-        </div>
+        {/* All Matches List */}
+        <div>
+          <div className="mb-4">
+            <h2 className="text-xl font-bold">All Matches ({allMatches.length})</h2>
+          </div>
 
-        {/* Upcoming Matches */}
-        {upcomingMatches.length > 0 && (
-          <div>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold">Upcoming Matches</h2>
-              <Link href="/matches">
-                <Button variant="ghost">View All</Button>
-              </Link>
-            </div>
-            <div className="space-y-4">
-              {upcomingMatches.map((match) => (
-                <Link key={match.id} href={`/matches/${match.id}`}>
-                  <Card className="hover:bg-foreground/5 transition-colors cursor-pointer">
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="text-sm text-foreground/60 mb-2">
-                            {match.stage.name} • {match.venue.city}
-                          </div>
-                          <div className="flex items-center gap-4">
-                            <div className="text-right flex-1">
-                              <div className="font-semibold">
-                                {match.homeTeam?.name || 'TBD'}
-                              </div>
-                            </div>
-                            <div className="text-2xl font-bold text-foreground/40">
-                              vs
-                            </div>
-                            <div className="text-left flex-1">
-                              <div className="font-semibold">
-                                {match.awayTeam?.name || 'TBD'}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-sm text-foreground/60">
-                            {formatMatchDate(new Date(match.scheduledAt))}
-                          </div>
-                          <div className="text-sm font-medium">
-                            {formatMatchTime(new Date(match.scheduledAt), match.venue.timezone)}
-                          </div>
-                        </div>
+          {/* Compact matches table */}
+          <div className="space-y-1">
+            {allMatches.map((match) => (
+              <Link key={match.id} href={`/matches/${match.id}`}>
+                <div className="hover:bg-foreground/5 transition-colors cursor-pointer border border-foreground/10 rounded-lg p-3">
+                  <div className="flex items-center gap-3">
+                    {/* Status Badge */}
+                    <div className="w-20 flex-shrink-0">
+                      {getStatusBadge(match.status as 'scheduled' | 'live' | 'finished')}
+                    </div>
+
+                    {/* Date */}
+                    <div className="w-24 flex-shrink-0 text-xs text-foreground/60">
+                      {formatMatchDate(new Date(match.scheduledAt))}
+                    </div>
+
+                    {/* Time */}
+                    <div className="w-16 flex-shrink-0 text-xs font-medium">
+                      {formatMatchTime(new Date(match.scheduledAt), match.venue.timezone)}
+                    </div>
+
+                    {/* Teams */}
+                    <div className="flex-1 flex items-center justify-center gap-3">
+                      <div className="text-right flex-1 text-sm font-medium truncate">
+                        {match.homeTeam?.name || 'TBD'}
                       </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
+                      {match.status === 'finished' && match.homeScore !== null ? (
+                        <div className="flex items-center gap-2 text-sm font-bold">
+                          <span>{match.homeScore}</span>
+                          <span className="text-foreground/40">-</span>
+                          <span>{match.awayScore}</span>
+                        </div>
+                      ) : (
+                        <div className="text-sm text-foreground/40">vs</div>
+                      )}
+                      <div className="text-left flex-1 text-sm font-medium truncate">
+                        {match.awayTeam?.name || 'TBD'}
+                      </div>
+                    </div>
 
-        {/* CTA for logged in users */}
-        {userId && upcomingMatches.length > 0 && (
-          <div className="mt-8 text-center">
-            <Link href="/matches">
-              <Button size="lg">Make Your Predictions</Button>
-            </Link>
+                    {/* Stage & Venue */}
+                    <div className="w-48 flex-shrink-0 text-xs text-foreground/60 truncate">
+                      {match.stage.name} • {match.venue.city}
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            ))}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation';
 import { getCurrentUserIdAndSync } from '@/lib/auth';
 import { getLeaderboard } from '@/db/queries';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,8 +16,13 @@ import { predictions } from '@/db/schema';
 import { eq, count, and, gte, isNotNull } from 'drizzle-orm';
 
 export default async function LeaderboardPage() {
-  // Ensure user exists in database if logged in
+  // Require authentication to view leaderboard
   const userId = await getCurrentUserIdAndSync();
+
+  if (!userId) {
+    redirect('/');
+  }
+
   const users = await getLeaderboard(100); // Top 100 users
 
   // Calculate rankings with rank numbers and stats
@@ -60,7 +66,7 @@ export default async function LeaderboardPage() {
         </div>
 
         {/* Info Cards */}
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
+        <div className="grid md:grid-cols-2 gap-6 mb-8">
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base">How to Earn Points</CardTitle>
@@ -69,22 +75,6 @@ export default async function LeaderboardPage() {
               <div className="space-y-1">
                 <div>• Exact score: 3 points</div>
                 <div>• Correct result: 1 point</div>
-                <div>• Points multiplied by stage</div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Stage Multipliers</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm text-foreground/60">
-              <div className="space-y-1">
-                <div>• Group Stage: 1.0x</div>
-                <div>• Round of 16: 1.5x</div>
-                <div>• Quarter Finals: 2.0x</div>
-                <div>• Semi Finals: 2.5x</div>
-                <div>• Final: 3.0x</div>
               </div>
             </CardContent>
           </Card>

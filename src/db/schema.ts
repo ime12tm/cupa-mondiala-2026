@@ -35,7 +35,6 @@ export const tournamentStages = pgTable(
     name: text("name").notNull(),
     slug: text("slug").notNull().unique(),
     sortOrder: integer("sort_order").notNull(),
-    pointsMultiplier: real("points_multiplier").default(1.0).notNull(),
   },
   (table) => ({
     slugIdx: uniqueIndex("tournament_stages_slug_idx").on(table.slug),

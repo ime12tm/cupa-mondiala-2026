@@ -75,12 +75,11 @@ function calculatePoints(
   predictedHome: number,
   predictedAway: number,
   actualHome: number,
-  actualAway: number,
-  stageMultiplier: number
+  actualAway: number
 ): number {
   // Exact score
   if (predictedHome === actualHome && predictedAway === actualAway) {
-    return Math.round(3 * stageMultiplier);
+    return 3;
   }
 
   // Correct result
@@ -88,7 +87,7 @@ function calculatePoints(
   const actualResult = calculateResult(actualHome, actualAway);
 
   if (predictedResult === actualResult) {
-    return Math.round(1 * stageMultiplier);
+    return 1;
   }
 
   // Wrong prediction
@@ -128,8 +127,7 @@ export async function calculatePointsForMatch(matchId: number) {
       prediction.homeScore,
       prediction.awayScore,
       match.homeScore,
-      match.awayScore,
-      match.stage.pointsMultiplier
+      match.awayScore
     );
 
     // Update prediction with points earned

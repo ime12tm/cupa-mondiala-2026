@@ -211,7 +211,7 @@ async function exampleTypeScriptRelations() {
     // TypeScript knows the shape of the data
     console.log(match.homeTeam?.name); // Type: string | undefined
     console.log(match.venue.city); // Type: string
-    console.log(match.stage.pointsMultiplier); // Type: number
+    console.log(match.stage.name); // Type: string
 
     // Access nested predictions
     match.predictions.forEach((prediction) => {

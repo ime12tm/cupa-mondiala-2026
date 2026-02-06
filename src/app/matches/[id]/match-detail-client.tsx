@@ -176,12 +176,6 @@ export function MatchDetailClient({ match, userId }: MatchDetailClientProps) {
                   ({match.venue.timezone})
                 </span>
               </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-foreground/60">Stage Multiplier:</span>
-                <span className="font-medium">
-                  {match.stage.pointsMultiplier}x
-                </span>
-              </div>
             </div>
           </CardContent>
         </Card>
@@ -391,17 +385,11 @@ export function MatchDetailClient({ match, userId }: MatchDetailClientProps) {
           <CardContent className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-foreground/60">Exact score match:</span>
-              <span className="font-medium">
-                3 points × {match.stage.pointsMultiplier}x ={' '}
-                {3 * match.stage.pointsMultiplier} points
-              </span>
+              <span className="font-medium">3 points</span>
             </div>
             <div className="flex justify-between">
               <span className="text-foreground/60">Correct result only:</span>
-              <span className="font-medium">
-                1 point × {match.stage.pointsMultiplier}x ={' '}
-                {1 * match.stage.pointsMultiplier} points
-              </span>
+              <span className="font-medium">1 point</span>
             </div>
             <div className="flex justify-between">
               <span className="text-foreground/60">Wrong prediction:</span>
