@@ -122,8 +122,6 @@ All 104 tournament matches.
 - `homeScore`, `awayScore` (integer, nullable) - Final scores (null until finished)
 - `status` (text, default "scheduled") - "scheduled", "live", "finished"
 - `homeScorePenalty`, `awayScorePenalty` (integer) - Penalty shootout scores
-- `kickoffAt`, `finishedAt` (timestamp with timezone) - Actual times
-- `createdAt`, `updatedAt` (timestamp)
 
 **Indexes:**
 - `matchNumber` (unique)

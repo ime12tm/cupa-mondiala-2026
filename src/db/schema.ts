@@ -99,10 +99,6 @@ export const matches = pgTable(
     status: text("status").default("scheduled").notNull(), // 'scheduled', 'live', 'finished'
     homeScorePenalty: integer("home_score_penalty"), // for knockout matches
     awayScorePenalty: integer("away_score_penalty"), // for knockout matches
-    kickoffAt: timestamp("kickoff_at", { withTimezone: true }),
-    finishedAt: timestamp("finished_at", { withTimezone: true }),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
   (table) => ({
     matchNumberIdx: uniqueIndex("matches_match_number_idx").on(

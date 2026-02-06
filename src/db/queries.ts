@@ -438,8 +438,6 @@ export async function updateMatchResult(
       homeScore,
       awayScore,
       status,
-      finishedAt: status === "finished" ? new Date() : null,
-      updatedAt: new Date(),
     })
     .where(eq(matches.id, matchId))
     .returning();
