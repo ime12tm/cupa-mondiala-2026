@@ -13,6 +13,22 @@ npm run lint      # ESLint (flat config, eslint.config.mjs)
 
 No test runner is configured. If tests are added later, update this section.
 
+## Documentation-First Approach
+
+**ALWAYS consult the `/docs` directory before writing any code.** These documentation files define **mandatory conventions** that override general practices and must be followed exactly.
+
+**Available Documentation:**
+- `docs/ui.md` — UI coding standards (shadcn/ui components, date formatting, inline composition patterns)
+- *(More docs will be added as the project grows)*
+
+**Workflow:**
+1. **Before starting any implementation**, check if there's a relevant doc file in `/docs`
+2. **Read the entire documentation file** to understand all conventions
+3. **Apply those standards strictly** when writing code
+4. If conventions conflict, the `/docs` files take precedence
+
+**Example:** Before building any UI component, read `docs/ui.md` in full to understand component patterns, styling conventions, and date handling requirements.
+
 ## Tech Stack
 
 - **Next.js 16.1.6** — App Router, React 19
@@ -93,6 +109,7 @@ npx tsx src/db/seed.ts        # Seed database
 
 ## Key Conventions
 
+- **Before writing any code, check the `/docs` directory for relevant standards documentation (e.g., `docs/ui.md` for UI components). These docs contain mandatory conventions that must be followed.**
 - Dark mode is handled via the CSS `prefers-color-scheme` media query, **not** a class-based strategy. New components should use the `--background` / `--foreground` CSS variables or Tailwind's `dark:` variant accordingly.
 - `next.config.ts` is currently empty — add Next.js options there as needed.
 - `.env*` files are gitignored. Use `.env.local` for local secrets; add a `.env.example` if new env vars are introduced.
