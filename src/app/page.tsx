@@ -5,6 +5,21 @@ import { db } from '@/db';
 import { Badge } from '@/components/ui/badge';
 import { formatMatchDate, formatMatchTime } from '@/lib/date-utils';
 import heroImage from '@/img/hero-img.jpg';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import {
+  getFirstGroupStageMatch,
+  getUserGroupStagePredictionCount,
+} from '@/db/queries';
+import { users } from '@/db/schema';
+import { eq } from 'drizzle-orm';
+import { GroupStageCountdown } from './matches/group-stage-countdown';
 
 export default async function HomePage() {
   const { userId } = await auth();
@@ -29,6 +44,71 @@ export default async function HomePage() {
     const { variant, label } = variants[status];
     return <Badge variant={variant} className="text-xs">{label}</Badge>;
   };
+
+  // Widget logic for group stage deadline
+  let widget = null;
+  if (userId) {
+    const user = await db.query.users.findFirst({
+      where: eq(users.userId, userId),
+    });
+
+    if (user && !user.groupStageDeadlinePassed) {
+      const firstMatch = await getFirstGroupStageMatch();
+      const deadlinePassed = new Date() >= new Date(firstMatch.scheduledAt);
+
+      if (!deadlinePassed) {
+        const count = await getUserGroupStagePredictionCount(userId);
+        const progressPercent = (count.completed / 72) * 100;
+
+        widget = (
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle>Group Stage Predictions</CardTitle>
+              <CardDescription>
+                Complete all 72 predictions before{' '}
+                {formatMatchDate(firstMatch.scheduledAt)}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {/* Progress bar */}
+                <div className="w-full bg-foreground/10 rounded-full h-3">
+                  <div
+                    className="bg-primary h-3 rounded-full transition-all"
+                    style={{ width: `${progressPercent}%` }}
+                  />
+                </div>
+
+                {/* Stats */}
+                <div className="flex justify-between text-sm">
+                  <span>
+                    {count.completed}/72 completed
+                  </span>
+                  <span>{72 - count.completed} remaining</span>
+                </div>
+
+                {/* Countdown */}
+                <div className="text-sm text-foreground/60">
+                  <GroupStageCountdown
+                    deadline={firstMatch.scheduledAt.toString()}
+                  />
+                </div>
+
+                {/* Action */}
+                <Link href="/matches">
+                  <Button className="w-full">
+                    {count.completed === 0
+                      ? 'Start Predictions'
+                      : 'Continue Predictions'}
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      }
+    }
+  }
 
   return (
     <>
@@ -65,6 +145,9 @@ export default async function HomePage() {
       {/* Content Section */}
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
+          {/* Group Stage Widget */}
+          {widget}
+
           {/* All Matches List */}
           <div>
             <div className="mb-4">

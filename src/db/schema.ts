@@ -19,6 +19,7 @@ export const users = pgTable(
     username: text("username"),
     displayName: text("display_name"),
     totalPoints: integer("total_points").default(0).notNull(),
+    groupStageDeadlinePassed: boolean("group_stage_deadline_passed").default(false).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },

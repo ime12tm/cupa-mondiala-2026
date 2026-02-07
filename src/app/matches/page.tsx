@@ -1,8 +1,18 @@
 import Link from 'next/link';
 import { auth } from '@clerk/nextjs/server';
-import { getMatchesWithUserPredictions } from '@/db/queries';
+import {
+  getMatchesWithUserPredictions,
+  getFirstGroupStageMatch,
+  getUserGroupStagePredictionCount,
+} from '@/db/queries';
 import { StageFilterClient } from './stage-filter-client';
 import { MatchCardWithPrediction } from './match-card-with-prediction';
+import { GroupStageCountdown } from './group-stage-countdown';
+import { formatMatchDate, formatMatchTime } from '@/lib/date-utils';
+import { db } from '@/db';
+import { users } from '@/db/schema';
+import { eq } from 'drizzle-orm';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 interface MatchesPageProps {
   searchParams: Promise<{ stage?: string }>;
@@ -17,6 +27,64 @@ export default async function MatchesPage({ searchParams }: MatchesPageProps) {
 
   const matches = await getMatchesWithUserPredictions(userId, stage);
 
+  // Banner logic (only for logged-in users)
+  let banner = null;
+  if (userId) {
+    const user = await db.query.users.findFirst({
+      where: eq(users.userId, userId),
+    });
+
+    if (user && !user.groupStageDeadlinePassed) {
+      const firstMatch = await getFirstGroupStageMatch();
+      const deadlinePassed = new Date() >= new Date(firstMatch.scheduledAt);
+      const count = await getUserGroupStagePredictionCount(userId);
+
+      if (deadlinePassed && count.completed < 72) {
+        // Locked banner
+        banner = (
+          <Alert variant="danger" className="mb-6">
+            <AlertTitle>Group Stage Predictions Locked</AlertTitle>
+            <AlertDescription>
+              You completed {count.completed}/72 group stage predictions before
+              the deadline. You can still predict knockout matches.
+            </AlertDescription>
+          </Alert>
+        );
+      } else if (!deadlinePassed) {
+        // Progress banner
+        banner = (
+          <Alert
+            variant={count.completed === 72 ? 'success' : 'default'}
+            className="mb-6"
+          >
+            <AlertTitle>
+              {count.completed === 72
+                ? '✓ All Group Stage Predictions Complete!'
+                : 'Complete Your Group Stage Predictions'}
+            </AlertTitle>
+            <AlertDescription>
+              <div>
+                Progress: {count.completed}/72 predictions
+              </div>
+              <div className="mt-2">
+                Deadline: {formatMatchDate(firstMatch.scheduledAt)} at{' '}
+                {formatMatchTime(
+                  firstMatch.scheduledAt,
+                  firstMatch.venue.timezone
+                )}
+              </div>
+              <div className="mt-1">
+                <GroupStageCountdown
+                  deadline={firstMatch.scheduledAt.toString()}
+                />
+              </div>
+            </AlertDescription>
+          </Alert>
+        );
+      }
+    }
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-7xl mx-auto">
@@ -27,6 +95,9 @@ export default async function MatchesPage({ searchParams }: MatchesPageProps) {
             View all matches and make your predictions
           </p>
         </div>
+
+        {/* Group Stage Banner */}
+        {banner}
 
         {/* Filter */}
         <div className="mb-6">

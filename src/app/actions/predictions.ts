@@ -1,8 +1,9 @@
 'use server';
 
 import { getCurrentUserIdAndSync } from '@/lib/auth';
-import { upsertPrediction } from '@/db/queries';
+import { upsertPrediction, canUserPredictGroupStage } from '@/db/queries';
 import { revalidatePath } from 'next/cache';
+import { db } from '@/db';
 
 export async function submitPrediction(
   matchId: number,
@@ -23,6 +24,30 @@ export async function submitPrediction(
 
     if (!Number.isInteger(homeScore) || !Number.isInteger(awayScore)) {
       return { success: false, error: 'Scores must be whole numbers' };
+    }
+
+    // Check if this is a group stage match
+    const match = await db.query.matches.findFirst({
+      where: (matches, { eq }) => eq(matches.id, matchId),
+      with: {
+        stage: true,
+      },
+    });
+
+    if (!match) {
+      return { success: false, error: 'Match not found' };
+    }
+
+    // Validate group stage predictions
+    if (match.stage.slug === 'group_stage') {
+      const validation = await canUserPredictGroupStage(userId);
+      if (!validation.allowed) {
+        return {
+          success: false,
+          error: validation.reason || 'Group stage predictions are locked',
+          progress: validation.progress,
+        };
+      }
     }
 
     const prediction = await upsertPrediction(userId, matchId, homeScore, awayScore);

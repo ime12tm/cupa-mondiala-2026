@@ -223,6 +223,149 @@ export async function upsertPrediction(
 }
 
 /**
+ * Get the first group stage match (Mexico vs South Africa)
+ * This is cached as it never changes
+ */
+export async function getFirstGroupStageMatch() {
+  // First, get the group stage ID
+  const groupStage = await db.query.tournamentStages.findFirst({
+    where: eq(tournamentStages.slug, "group_stage"),
+  });
+
+  if (!groupStage) {
+    throw new Error("Group stage not found");
+  }
+
+  // Then get the first match of that stage
+  const firstMatch = await db.query.matches.findFirst({
+    where: eq(matches.stageId, groupStage.id),
+    with: {
+      stage: true,
+      venue: true,
+      homeTeam: true,
+      awayTeam: true,
+    },
+    orderBy: [asc(matches.scheduledAt)],
+  });
+
+  if (!firstMatch) {
+    throw new Error("First group stage match not found");
+  }
+
+  return firstMatch;
+}
+
+/**
+ * Check if the group stage deadline has passed
+ * Returns true if current time >= first match kickoff
+ */
+export async function hasGroupStageDeadlinePassed(): Promise<boolean> {
+  const firstMatch = await getFirstGroupStageMatch();
+  return new Date() >= new Date(firstMatch.scheduledAt);
+}
+
+/**
+ * Count how many group stage predictions a user has made
+ * Returns: { completed: number, total: 72 }
+ */
+export async function getUserGroupStagePredictionCount(userId: string) {
+  // Get all group stage match IDs
+  const groupStageMatches = await db
+    .select({ id: matches.id })
+    .from(matches)
+    .innerJoin(tournamentStages, eq(matches.stageId, tournamentStages.id))
+    .where(eq(tournamentStages.slug, "group_stage"));
+
+  const total = groupStageMatches.length;
+
+  // Count user's predictions for these matches
+  const userPredictions = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(predictions)
+    .innerJoin(matches, eq(predictions.matchId, matches.id))
+    .innerJoin(tournamentStages, eq(matches.stageId, tournamentStages.id))
+    .where(
+      and(
+        eq(predictions.userId, userId),
+        eq(tournamentStages.slug, "group_stage")
+      )
+    );
+
+  const completed = userPredictions[0]?.count || 0;
+
+  return { completed, total };
+}
+
+/**
+ * Check if user can predict group stage matches
+ * Returns: {
+ *   allowed: boolean,
+ *   reason?: string,
+ *   progress: { completed: number, total: 72 }
+ * }
+ */
+export async function canUserPredictGroupStage(userId: string) {
+  // Check if user is admin (admins bypass all restrictions)
+  const { isAdmin } = await import("@/lib/auth");
+  const adminStatus = await isAdmin();
+
+  if (adminStatus) {
+    return {
+      allowed: true,
+      reason: "Admin override",
+      progress: { completed: 0, total: 72 },
+    };
+  }
+
+  // Get user record
+  const user = await db.query.users.findFirst({
+    where: eq(users.userId, userId),
+  });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  // If user joined after deadline, they're exempt
+  if (user.groupStageDeadlinePassed) {
+    return {
+      allowed: true,
+      reason: "Joined after deadline",
+      progress: { completed: 0, total: 72 },
+    };
+  }
+
+  // Check if deadline has passed
+  const deadlinePassed = await hasGroupStageDeadlinePassed();
+
+  // If deadline hasn't passed yet, allow predictions
+  if (!deadlinePassed) {
+    const progress = await getUserGroupStagePredictionCount(userId);
+    return {
+      allowed: true,
+      progress,
+    };
+  }
+
+  // Deadline has passed - check if user completed all predictions
+  const progress = await getUserGroupStagePredictionCount(userId);
+
+  if (progress.completed === 72) {
+    return {
+      allowed: true,
+      progress,
+    };
+  }
+
+  // User didn't complete all predictions before deadline
+  return {
+    allowed: false,
+    reason: `You completed ${progress.completed}/72 group stage predictions before the deadline. Group stage predictions are now locked.`,
+    progress,
+  };
+}
+
+/**
  * Get all predictions for a user with match details
  */
 export async function getUserPredictions(userId: string) {
@@ -452,6 +595,9 @@ export async function upsertUserFromClerk(clerkData: {
     [clerkData.firstName, clerkData.lastName].filter(Boolean).join(" ") ||
     clerkData.email.split("@")[0];
 
+  // Check if group stage deadline has passed
+  const deadlinePassed = await hasGroupStageDeadlinePassed();
+
   const [user] = await db
     .insert(users)
     .values({
@@ -460,6 +606,7 @@ export async function upsertUserFromClerk(clerkData: {
       username: clerkData.username || null,
       displayName,
       totalPoints: 0,
+      groupStageDeadlinePassed: deadlinePassed,
     })
     .onConflictDoUpdate({
       target: users.userId,
@@ -468,6 +615,7 @@ export async function upsertUserFromClerk(clerkData: {
         username: clerkData.username || null,
         displayName,
         updatedAt: new Date(),
+        // DO NOT update groupStageDeadlinePassed - it's set once at creation
       },
     })
     .returning();
