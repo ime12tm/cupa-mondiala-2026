@@ -6,6 +6,7 @@ import { updateMatchResultAction } from '@/app/actions/admin';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Match } from '@/db/schema';
 
 interface AdminMatchResultFormProps {
@@ -145,15 +146,13 @@ export function AdminMatchResultForm({ match }: AdminMatchResultFormProps) {
         </Alert>
       )}
 
-      <div className="flex gap-3">
-        <Button type="submit" disabled={isPending} className="flex-1" size="lg">
-          {isPending
-            ? 'Saving...'
-            : match.homeScore === null
-            ? 'Save Result'
-            : 'Update Result'}
-        </Button>
-      </div>
+      <Button type="submit" disabled={isPending} size="lg">
+        {isPending
+          ? 'Saving...'
+          : match.homeScore === null
+          ? 'Save Result'
+          : 'Update Result'}
+      </Button>
 
       {match.homeScore === null && (
         <Alert variant="warning">

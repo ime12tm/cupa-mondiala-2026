@@ -31,62 +31,70 @@ export default async function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}
+          className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen bg-[#FFF5EE]`}
         >
           {/* Header */}
-          <header className="border-b border-foreground/10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="container mx-auto flex h-16 items-center justify-between px-4">
-              <div className="flex items-center gap-8">
-                <Link href="/" className="text-xl font-bold">
-                  World Cup 2026
-                </Link>
-                <nav className="hidden md:flex gap-6">
-                  <Link
-                    href="/matches"
-                    className="text-sm font-medium text-foreground/60 hover:text-foreground transition-colors"
-                  >
-                    Matches
-                  </Link>
-                  <Link
-                    href="/groups"
-                    className="text-sm font-medium text-foreground/60 hover:text-foreground transition-colors"
-                  >
-                    Groups
-                  </Link>
-                  <Link
-                    href="/leaderboard"
-                    className="text-sm font-medium text-foreground/60 hover:text-foreground transition-colors"
-                  >
-                    Leaderboard
-                  </Link>
-                  <SignedIn>
-                    <Link
-                      href="/my-predictions"
-                      className="text-sm font-medium text-foreground/60 hover:text-foreground transition-colors"
-                    >
-                      My Predictions
-                    </Link>
-                  </SignedIn>
-                  {adminStatus && (
-                    <Link
-                      href="/admin"
-                      className="text-sm font-medium text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
-                    >
-                      Admin
-                    </Link>
-                  )}
-                </nav>
-              </div>
+          <header className="bg-black text-white border-b border-white/10">
+            <div className="container mx-auto flex h-16 items-center justify-center px-4 relative">
+              {/* Logo - absolute left */}
+              <Link href="/" className="absolute left-4 text-xl font-bold text-white">
+                World Cup 2026
+              </Link>
 
-              <div className="flex items-center gap-4">
+              {/* Centered navigation */}
+              <nav className="hidden md:flex gap-6">
+                <Link
+                  href="/matches"
+                  className="text-sm font-medium text-white/80 hover:text-white transition-colors"
+                >
+                  Matches
+                </Link>
+                <Link
+                  href="/groups"
+                  className="text-sm font-medium text-white/80 hover:text-white transition-colors"
+                >
+                  Groups
+                </Link>
+                <Link
+                  href="/leaderboard"
+                  className="text-sm font-medium text-white/80 hover:text-white transition-colors"
+                >
+                  Leaderboard
+                </Link>
+                <SignedIn>
+                  <Link
+                    href="/my-predictions"
+                    className="text-sm font-medium text-white/80 hover:text-white transition-colors"
+                  >
+                    My Predictions
+                  </Link>
+                  <Link
+                    href="/predictions-matrix"
+                    className="text-sm font-medium text-white/80 hover:text-white transition-colors"
+                  >
+                    Predictions Table
+                  </Link>
+                </SignedIn>
+                {adminStatus && (
+                  <Link
+                    href="/admin"
+                    className="text-sm font-medium text-red-300 hover:text-red-200 transition-colors"
+                  >
+                    Admin
+                  </Link>
+                )}
+              </nav>
+
+              {/* Auth buttons - absolute right */}
+              <div className="absolute right-4 flex items-center gap-4">
                 <SignedOut>
                   <SignInButton mode="modal">
-                    <button className="text-sm font-medium text-foreground/60 hover:text-foreground transition-colors">
+                    <button className="text-sm font-medium text-white/80 hover:text-white transition-colors">
                       Sign In
                     </button>
                   </SignInButton>
                   <SignUpButton mode="modal">
-                    <button className="text-sm font-medium bg-foreground text-background px-4 py-2 rounded-md hover:bg-foreground/90 transition-colors">
+                    <button className="text-sm font-medium bg-white text-black px-4 py-2 rounded-md hover:bg-white/90 transition-colors">
                       Sign Up
                     </button>
                   </SignUpButton>
@@ -98,25 +106,32 @@ export default async function RootLayout({
             </div>
           </header>
 
-          <main className="flex-1">{children}</main>
+          <main className="flex-1 pb-24">{children}</main>
 
           {/* Footer */}
-          <footer className="border-t border-foreground/10 mt-auto">
-            <div className="container mx-auto px-4 py-8">
-              <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                <div className="text-sm text-foreground/60">
-                  © 2026 World Cup Predictions. All rights reserved.
-                </div>
-                <div className="flex gap-6 text-sm text-foreground/60">
-                  <a href="#" className="hover:text-foreground transition-colors">
+          <footer className="fixed bottom-0 left-0 right-0 bg-black text-white border-t border-white/10 z-40">
+            <div className="container mx-auto px-4 py-6">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-white/80">
+                <p>&copy; 2026 World Cup Predictions. All rights reserved.</p>
+                <div className="flex gap-6">
+                  <Link
+                    href="/about"
+                    className="hover:text-white transition-colors"
+                  >
                     About
-                  </a>
-                  <a href="#" className="hover:text-foreground transition-colors">
+                  </Link>
+                  <Link
+                    href="/rules"
+                    className="hover:text-white transition-colors"
+                  >
                     Rules
-                  </a>
-                  <a href="#" className="hover:text-foreground transition-colors">
+                  </Link>
+                  <Link
+                    href="/contact"
+                    className="hover:text-white transition-colors"
+                  >
                     Contact
-                  </a>
+                  </Link>
                 </div>
               </div>
             </div>

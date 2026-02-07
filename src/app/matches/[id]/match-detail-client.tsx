@@ -25,8 +25,8 @@ interface MatchDetailClientProps {
 
 export function MatchDetailClient({ match, userId }: MatchDetailClientProps) {
   const router = useRouter();
-  const [homeScore, setHomeScore] = useState(match.userPrediction?.homeScore ?? 0);
-  const [awayScore, setAwayScore] = useState(match.userPrediction?.awayScore ?? 0);
+  const [firstScore, setFirstScore] = useState(match.userPrediction?.homeScore ?? 0);
+  const [secondScore, setSecondScore] = useState(match.userPrediction?.awayScore ?? 0);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -54,7 +54,7 @@ export function MatchDetailClient({ match, userId }: MatchDetailClientProps) {
     setSuccess(null);
 
     startTransition(async () => {
-      const result = await submitPrediction(match.id, homeScore, awayScore);
+      const result = await submitPrediction(match.id, firstScore, secondScore);
 
       if (result.success) {
         setSuccess('Prediction saved successfully!');
@@ -78,25 +78,47 @@ export function MatchDetailClient({ match, userId }: MatchDetailClientProps) {
     }
   };
 
-  // Calculate predicted result for display
-  const getPredictedResult = (home: number, away: number) => {
-    return home > away ? 'Home Win' : home < away ? 'Away Win' : 'Draw';
+  // Calculate predicted result for display with team name
+  const getPredictedResult = (first: number, second: number) => {
+    const firstTeamName = match.homeTeam?.name || 'TBD';
+    const secondTeamName = match.awayTeam?.name || 'TBD';
+
+    if (first > second) {
+      return `${firstTeamName} win [1]`;
+    } else if (first < second) {
+      return `${secondTeamName} win [2]`;
+    } else {
+      return 'Draw [X]';
+    }
   };
 
   // Match result calculation
   const getMatchResult = () => {
     if (match.homeScore === null || match.awayScore === null) return null;
-    return match.homeScore > match.awayScore
-      ? 'Home Win'
-      : match.homeScore < match.awayScore
-      ? 'Away Win'
-      : 'Draw';
+    const firstTeamName = match.homeTeam?.name || 'TBD';
+    const secondTeamName = match.awayTeam?.name || 'TBD';
+
+    if (match.homeScore > match.awayScore) {
+      return `${firstTeamName} win [1]`;
+    } else if (match.homeScore < match.awayScore) {
+      return `${secondTeamName} win [2]`;
+    } else {
+      return 'Draw [X]';
+    }
   };
 
-  const resultLabels: Record<string, string> = {
-    '1': 'Home Win',
-    'X': 'Draw',
-    '2': 'Away Win',
+  // Get result text from prediction
+  const getResultFromPrediction = (pred: Prediction) => {
+    const firstTeamName = match.homeTeam?.name || 'TBD';
+    const secondTeamName = match.awayTeam?.name || 'TBD';
+
+    if (pred.result === '1') {
+      return `${firstTeamName} win [1]`;
+    } else if (pred.result === '2') {
+      return `${secondTeamName} win [2]`;
+    } else {
+      return 'Draw [X]';
+    }
   };
 
   return (
@@ -120,7 +142,7 @@ export function MatchDetailClient({ match, userId }: MatchDetailClientProps) {
           <CardContent className="space-y-6">
             {/* Teams */}
             <div className="space-y-4">
-              {/* Home Team */}
+              {/* First Team */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="text-2xl font-bold">
@@ -139,7 +161,7 @@ export function MatchDetailClient({ match, userId }: MatchDetailClientProps) {
                 vs
               </div>
 
-              {/* Away Team */}
+              {/* Second Team */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="text-2xl font-bold">
@@ -213,7 +235,7 @@ export function MatchDetailClient({ match, userId }: MatchDetailClientProps) {
                     {/* Result */}
                     <div className="text-center">
                       <div className="text-sm text-foreground/60 mb-1">Predicted Result</div>
-                      <Badge variant="info">{resultLabels[match.userPrediction.result]}</Badge>
+                      <Badge variant="info">{getResultFromPrediction(match.userPrediction)}</Badge>
                     </div>
 
                     {/* Points Earned */}
@@ -252,21 +274,21 @@ export function MatchDetailClient({ match, userId }: MatchDetailClientProps) {
                       </h3>
 
                       <div className="flex items-center justify-center gap-6">
-                        {/* Home Score */}
+                        {/* First Team Score */}
                         <div className="flex-1 max-w-[120px]">
                           <label
-                            htmlFor="home-score"
+                            htmlFor="first-score"
                             className="block text-sm font-medium mb-2 text-center"
                           >
-                            Home Score
+                            First Team Score
                           </label>
                           <Input
-                            id="home-score"
+                            id="first-score"
                             type="number"
                             min="0"
                             max="99"
-                            value={homeScore}
-                            onChange={(e) => handleScoreChange(e.target.value, setHomeScore)}
+                            value={firstScore}
+                            onChange={(e) => handleScoreChange(e.target.value, setFirstScore)}
                             disabled={isPending}
                             className="text-center text-2xl font-bold h-16"
                           />
@@ -274,21 +296,21 @@ export function MatchDetailClient({ match, userId }: MatchDetailClientProps) {
 
                         <div className="text-3xl font-bold text-foreground/40 pt-6">-</div>
 
-                        {/* Away Score */}
+                        {/* Second Team Score */}
                         <div className="flex-1 max-w-[120px]">
                           <label
-                            htmlFor="away-score"
+                            htmlFor="second-score"
                             className="block text-sm font-medium mb-2 text-center"
                           >
-                            Away Score
+                            Second Team Score
                           </label>
                           <Input
-                            id="away-score"
+                            id="second-score"
                             type="number"
                             min="0"
                             max="99"
-                            value={awayScore}
-                            onChange={(e) => handleScoreChange(e.target.value, setAwayScore)}
+                            value={secondScore}
+                            onChange={(e) => handleScoreChange(e.target.value, setSecondScore)}
                             disabled={isPending}
                             className="text-center text-2xl font-bold h-16"
                           />
@@ -300,7 +322,7 @@ export function MatchDetailClient({ match, userId }: MatchDetailClientProps) {
                     <div className="text-center">
                       <div className="text-sm text-foreground/60 mb-1">Predicted Result</div>
                       <div className="text-lg font-semibold">
-                        {getPredictedResult(homeScore, awayScore)}
+                        {getPredictedResult(firstScore, secondScore)}
                       </div>
                     </div>
 

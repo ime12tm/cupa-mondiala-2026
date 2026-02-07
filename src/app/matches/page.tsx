@@ -1,10 +1,8 @@
-import { auth } from '@clerk/nextjs/server';
 import Link from 'next/link';
+import { auth } from '@clerk/nextjs/server';
 import { getMatchesWithUserPredictions } from '@/db/queries';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { formatMatchDate, formatMatchTime } from '@/lib/date-utils';
 import { StageFilterClient } from './stage-filter-client';
+import { MatchCardWithPrediction } from './match-card-with-prediction';
 
 interface MatchesPageProps {
   searchParams: Promise<{ stage?: string }>;
@@ -18,16 +16,6 @@ export default async function MatchesPage({ searchParams }: MatchesPageProps) {
   const stage = (params.stage || undefined) as string | undefined;
 
   const matches = await getMatchesWithUserPredictions(userId, stage);
-
-  const getStatusBadge = (status: 'scheduled' | 'live' | 'finished') => {
-    const variants = {
-      scheduled: { variant: 'default' as const, label: 'Scheduled' },
-      live: { variant: 'danger' as const, label: 'Live' },
-      finished: { variant: 'success' as const, label: 'Finished' },
-    };
-    const { variant, label } = variants[status];
-    return <Badge variant={variant}>{label}</Badge>;
-  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -53,70 +41,15 @@ export default async function MatchesPage({ searchParams }: MatchesPageProps) {
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {matches.map((match) => (
-              <Link key={match.id} href={`/matches/${match.id}`}>
-                <Card className="hover:bg-foreground/5 transition-colors cursor-pointer h-full">
-                  <CardContent className="p-6">
-                    {/* Header with stage and status */}
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="text-sm text-foreground/60">
-                        {match.stage.name}
-                      </div>
-                      <div className="flex gap-2">
-                        {getStatusBadge(match.status as 'scheduled' | 'live' | 'finished')}
-                        {match.userPrediction && <Badge variant="info">Predicted</Badge>}
-                      </div>
-                    </div>
-
-                    {/* Teams */}
-                    <div className="space-y-3 mb-4">
-                      {/* Home Team */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3 flex-1">
-                          <div className="font-semibold text-lg">
-                            {match.homeTeam?.name || 'TBD'}
-                          </div>
-                          {match.homeTeam?.groupLetter && (
-                            <Badge variant="default" className="text-xs">
-                              Group {match.homeTeam.groupLetter}
-                            </Badge>
-                          )}
-                        </div>
-                        {match.status === 'finished' && match.homeScore !== null && (
-                          <div className="text-2xl font-bold ml-4">{match.homeScore}</div>
-                        )}
-                      </div>
-
-                      {/* Away Team */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3 flex-1">
-                          <div className="font-semibold text-lg">
-                            {match.awayTeam?.name || 'TBD'}
-                          </div>
-                          {match.awayTeam?.groupLetter && (
-                            <Badge variant="default" className="text-xs">
-                              Group {match.awayTeam.groupLetter}
-                            </Badge>
-                          )}
-                        </div>
-                        {match.status === 'finished' && match.awayScore !== null && (
-                          <div className="text-2xl font-bold ml-4">{match.awayScore}</div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Venue and Time */}
-                    <div className="border-t border-foreground/10 pt-3 space-y-1">
-                      <div className="text-sm text-foreground/60">
-                        {match.venue.name}, {match.venue.city}
-                      </div>
-                      <div className="text-sm font-medium">
-                        {formatMatchDate(new Date(match.scheduledAt))}
-                        {' • '}
-                        {formatMatchTime(new Date(match.scheduledAt), match.venue.timezone)}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+              <Link
+                key={match.id}
+                href={`/matches/${match.id}`}
+                className="block transition-transform hover:scale-[1.02]"
+              >
+                <MatchCardWithPrediction
+                  match={match}
+                  userId={userId}
+                />
               </Link>
             ))}
           </div>
