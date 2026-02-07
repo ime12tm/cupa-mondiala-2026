@@ -6,6 +6,7 @@ import {
   teams,
   venues,
   tournamentStages,
+  leaderboardSnapshots,
   type NewPrediction,
   type Prediction,
 } from "./schema";
@@ -672,6 +673,82 @@ export async function adminDeletePrediction(predictionId: number) {
   await db.delete(predictions).where(eq(predictions.id, predictionId));
 
   return { success: true, deletedPrediction: prediction };
+}
+
+/**
+ * Admin-only: Delete ALL predictions and reset user points
+ * WARNING: This is a destructive operation that cannot be undone
+ */
+export async function adminDeleteAllPredictions(options: {
+  clearLeaderboard?: boolean;
+  resetMatchResults?: boolean;
+}) {
+  try {
+    // Get statistics before deletion
+    const [predictionStats] = await db
+      .select({
+        totalPredictions: sql<number>`count(*)`,
+        usersWithPredictions: sql<number>`count(distinct user_id)`,
+        totalPointsAwarded: sql<number>`sum(coalesce(points_earned, 0))`,
+      })
+      .from(predictions);
+
+    // Get match statistics before reset
+    const [matchStats] = await db
+      .select({
+        totalMatches: sql<number>`count(*)`,
+        finishedMatches: sql<number>`count(*) filter (where status = 'finished')`,
+        liveMatches: sql<number>`count(*) filter (where status = 'live')`,
+      })
+      .from(matches);
+
+    // Delete all predictions
+    await db.delete(predictions);
+
+    // Reset all users' totalPoints to 0
+    await db
+      .update(users)
+      .set({
+        totalPoints: 0,
+        updatedAt: new Date(),
+      });
+
+    // Reset all match results if requested
+    let matchesReset = 0;
+    if (options.resetMatchResults) {
+      const result = await db
+        .update(matches)
+        .set({
+          homeScore: null,
+          awayScore: null,
+          homeScorePenalty: null,
+          awayScorePenalty: null,
+          status: 'scheduled',
+        });
+      matchesReset = matchStats.finishedMatches + matchStats.liveMatches;
+    }
+
+    // Clear leaderboard snapshots if requested
+    if (options.clearLeaderboard) {
+      await db.delete(leaderboardSnapshots);
+    }
+
+    return {
+      success: true,
+      stats: {
+        predictionsDeleted: predictionStats.totalPredictions,
+        usersAffected: predictionStats.usersWithPredictions,
+        pointsReset: predictionStats.totalPointsAwarded,
+        matchesReset: matchesReset,
+        leaderboardCleared: options.clearLeaderboard,
+      },
+    };
+  } catch (error) {
+    console.error('Error deleting all predictions:', error);
+    throw new Error(
+      `Failed to delete all predictions: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
+  }
 }
 
 /**

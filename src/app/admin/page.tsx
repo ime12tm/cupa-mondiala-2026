@@ -5,6 +5,9 @@ import { eq, count, sql } from 'drizzle-orm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { formatMatchDate } from '@/lib/date-utils';
+import { getAllUsers } from '@/db/queries';
+import { UserPredictionsNav } from './user-predictions-nav';
+import { DangerZoneClient } from './danger-zone-client';
 
 export default async function AdminDashboardPage() {
   // Get match statistics
@@ -28,6 +31,9 @@ export default async function AdminDashboardPage() {
       stage: true,
     },
   });
+
+  // Get all users for the predictions dropdown
+  const allUsers = await getAllUsers();
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -107,6 +113,12 @@ export default async function AdminDashboardPage() {
                   Matches Needing Results
                 </Button>
               </Link>
+              <UserPredictionsNav users={allUsers} />
+              <Link href="/predictions-matrix" className="block">
+                <Button variant="secondary" className="w-full justify-start">
+                  View Predictions Matrix
+                </Button>
+              </Link>
             </CardContent>
           </Card>
 
@@ -164,6 +176,9 @@ export default async function AdminDashboardPage() {
             </p>
           </CardContent>
         </Card>
+
+        {/* Danger Zone */}
+        <DangerZoneClient />
       </div>
     </div>
   );
