@@ -228,6 +228,7 @@ export async function getUserPredictions(userId: string) {
   const userPredictions = await db.query.predictions.findMany({
     where: eq(predictions.userId, userId),
     with: {
+      user: true,
       match: {
         with: {
           homeTeam: true,
@@ -326,6 +327,73 @@ export async function getLeaderboard(limit: number = 100) {
   return await db.query.users.findMany({
     orderBy: [desc(users.totalPoints)],
     limit,
+  });
+}
+
+/**
+ * Get all predictions for matrix display
+ * Returns matches with all predictions organized efficiently
+ */
+export async function getPredictionsMatrix(options?: {
+  stageId?: number;
+  finishedOnly?: boolean;
+}) {
+  // Build where conditions
+  let whereConditions = undefined;
+
+  if (options?.stageId) {
+    whereConditions = eq(matches.stageId, options.stageId);
+  }
+
+  if (options?.finishedOnly) {
+    whereConditions = whereConditions
+      ? and(whereConditions, eq(matches.status, 'finished'))
+      : eq(matches.status, 'finished');
+  }
+
+  // Get all matches with teams, venue, and stage info
+  const allMatches = await db.query.matches.findMany({
+    where: whereConditions,
+    with: {
+      homeTeam: true,
+      awayTeam: true,
+      venue: true,
+      stage: true,
+    },
+    orderBy: [asc(matches.scheduledAt)],
+  });
+
+  // Get all users (ordered by total points descending)
+  const allUsers = await db.query.users.findMany({
+    orderBy: [desc(users.totalPoints)],
+  });
+
+  // Get ALL predictions at once
+  const allPredictions = await db.query.predictions.findMany();
+
+  // Create efficient lookup: Map<matchId, Map<userId, prediction>>
+  const predictionLookup = new Map<number, Map<string, typeof allPredictions[0]>>();
+
+  for (const prediction of allPredictions) {
+    if (!predictionLookup.has(prediction.matchId)) {
+      predictionLookup.set(prediction.matchId, new Map());
+    }
+    predictionLookup.get(prediction.matchId)!.set(prediction.userId, prediction);
+  }
+
+  return {
+    matches: allMatches,
+    users: allUsers,
+    predictionLookup,
+  };
+}
+
+/**
+ * Get all users sorted by display name
+ */
+export async function getAllUsers() {
+  return await db.query.users.findMany({
+    orderBy: [asc(users.displayName)],
   });
 }
 
@@ -510,3 +578,270 @@ export async function updateMatchResult(
 
   return updated;
 }
+
+/**
+ * Admin-only: Update a prediction by ID
+ * Updates the prediction and recalculates user's total points if pointsEarned changes
+ */
+export async function adminUpdatePrediction(
+  predictionId: number,
+  updates: {
+    homeScore?: number;
+    awayScore?: number;
+    pointsEarned?: number | null;
+    isLocked?: boolean;
+  }
+) {
+  // Get the existing prediction
+  const existingPrediction = await db.query.predictions.findFirst({
+    where: eq(predictions.id, predictionId),
+  });
+
+  if (!existingPrediction) {
+    throw new Error("Prediction not found");
+  }
+
+  // Calculate new result if scores are being updated
+  let result = existingPrediction.result;
+  if (updates.homeScore !== undefined && updates.awayScore !== undefined) {
+    result = calculateResult(updates.homeScore, updates.awayScore);
+  } else if (updates.homeScore !== undefined) {
+    result = calculateResult(updates.homeScore, existingPrediction.awayScore);
+  } else if (updates.awayScore !== undefined) {
+    result = calculateResult(existingPrediction.homeScore, updates.awayScore);
+  }
+
+  // Update the prediction
+  const [updated] = await db
+    .update(predictions)
+    .set({
+      ...updates,
+      result,
+      updatedAt: new Date(),
+    })
+    .where(eq(predictions.id, predictionId))
+    .returning();
+
+  // If pointsEarned changed, recalculate user's total points
+  if (
+    updates.pointsEarned !== undefined &&
+    updates.pointsEarned !== existingPrediction.pointsEarned
+  ) {
+    const oldPoints = existingPrediction.pointsEarned ?? 0;
+    const newPoints = updates.pointsEarned ?? 0;
+    const pointsDiff = newPoints - oldPoints;
+
+    await db
+      .update(users)
+      .set({
+        totalPoints: sql`${users.totalPoints} + ${pointsDiff}`,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.userId, existingPrediction.userId));
+  }
+
+  return updated;
+}
+
+/**
+ * Admin-only: Delete a prediction by ID
+ * Removes the points from user's total if prediction had points
+ */
+export async function adminDeletePrediction(predictionId: number) {
+  // Get the prediction to check if it has points
+  const prediction = await db.query.predictions.findFirst({
+    where: eq(predictions.id, predictionId),
+  });
+
+  if (!prediction) {
+    throw new Error("Prediction not found");
+  }
+
+  // If prediction had points, subtract them from user's total
+  if (prediction.pointsEarned !== null && prediction.pointsEarned > 0) {
+    await db
+      .update(users)
+      .set({
+        totalPoints: sql`${users.totalPoints} - ${prediction.pointsEarned}`,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.userId, prediction.userId));
+  }
+
+  // Delete the prediction
+  await db.delete(predictions).where(eq(predictions.id, predictionId));
+
+  return { success: true, deletedPrediction: prediction };
+}
+
+/**
+ * Admin-only: Get prediction by ID with full details
+ */
+export async function adminGetPrediction(predictionId: number) {
+  return await db.query.predictions.findFirst({
+    where: eq(predictions.id, predictionId),
+    with: {
+      user: true,
+      match: {
+        with: {
+          homeTeam: true,
+          awayTeam: true,
+          stage: true,
+        },
+      },
+    },
+  });
+}
+
+/**
+ * Get all teams in a specific group
+ */
+export async function getTeamsByGroup(groupLetter: string) {
+  return await db.query.teams.findMany({
+    where: eq(teams.groupLetter, groupLetter),
+    orderBy: [asc(teams.name)],
+  });
+}
+
+/**
+ * Get all group stage matches with full details
+ */
+export async function getGroupStageMatches() {
+  const groupStage = await db.query.tournamentStages.findFirst({
+    where: eq(tournamentStages.slug, "group_stage"),
+  });
+
+  if (!groupStage) {
+    return [];
+  }
+
+  return await db.query.matches.findMany({
+    where: eq(matches.stageId, groupStage.id),
+    with: {
+      homeTeam: true,
+      awayTeam: true,
+      venue: true,
+      stage: true,
+    },
+  });
+}
+
+/**
+ * Calculate standings for a specific group
+ * Returns teams sorted by Points DESC, Goal Difference DESC, Goals For DESC
+ */
+export async function getGroupStandings(groupLetter: string) {
+  // Get all teams in the group
+  const groupTeams = await getTeamsByGroup(groupLetter);
+
+  // Get all finished matches for this group
+  const groupStage = await db.query.tournamentStages.findFirst({
+    where: eq(tournamentStages.slug, "group_stage"),
+  });
+
+  if (!groupStage) {
+    return [];
+  }
+
+  const teamIds = groupTeams.map((t) => t.id);
+
+  const groupMatches = await db.query.matches.findMany({
+    where: and(
+      eq(matches.stageId, groupStage.id),
+      eq(matches.status, "finished"),
+      sql`(${matches.homeTeamId} IN (${sql.join(teamIds, sql`, `)}) OR ${matches.awayTeamId} IN (${sql.join(teamIds, sql`, `)}))`
+    ),
+    with: {
+      homeTeam: true,
+      awayTeam: true,
+    },
+  });
+
+  // Calculate stats for each team
+  const standings = groupTeams.map((team) => {
+    let played = 0;
+    let won = 0;
+    let drawn = 0;
+    let lost = 0;
+    let goalsFor = 0;
+    let goalsAgainst = 0;
+
+    groupMatches.forEach((match) => {
+      // Only process if both scores are set
+      if (match.homeScore === null || match.awayScore === null) return;
+
+      const isHome = match.homeTeamId === team.id;
+      const isAway = match.awayTeamId === team.id;
+
+      if (!isHome && !isAway) return; // Team not in this match
+
+      played++;
+
+      if (isHome) {
+        goalsFor += match.homeScore;
+        goalsAgainst += match.awayScore;
+
+        if (match.homeScore > match.awayScore) {
+          won++;
+        } else if (match.homeScore === match.awayScore) {
+          drawn++;
+        } else {
+          lost++;
+        }
+      } else {
+        goalsFor += match.awayScore;
+        goalsAgainst += match.homeScore;
+
+        if (match.awayScore > match.homeScore) {
+          won++;
+        } else if (match.awayScore === match.homeScore) {
+          drawn++;
+        } else {
+          lost++;
+        }
+      }
+    });
+
+    const goalDifference = goalsFor - goalsAgainst;
+    const points = won * 3 + drawn * 1;
+
+    return {
+      team,
+      played,
+      won,
+      drawn,
+      lost,
+      goalsFor,
+      goalsAgainst,
+      goalDifference,
+      points,
+    };
+  });
+
+  // Sort by: Points DESC, Goal Difference DESC, Goals For DESC
+  standings.sort((a, b) => {
+    if (b.points !== a.points) return b.points - a.points;
+    if (b.goalDifference !== a.goalDifference)
+      return b.goalDifference - a.goalDifference;
+    return b.goalsFor - a.goalsFor;
+  });
+
+  return standings;
+}
+
+/**
+ * Get standings for all 12 groups (A-L)
+ */
+export async function getAllGroupsStandings() {
+  const groups = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
+
+  const allStandings = await Promise.all(
+    groups.map(async (groupLetter) => ({
+      groupLetter,
+      standings: await getGroupStandings(groupLetter),
+    }))
+  );
+
+  return allStandings;
+}
+

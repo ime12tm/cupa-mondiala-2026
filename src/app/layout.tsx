@@ -48,6 +48,12 @@ export default async function RootLayout({
                     Matches
                   </Link>
                   <Link
+                    href="/groups"
+                    className="text-sm font-medium text-foreground/60 hover:text-foreground transition-colors"
+                  >
+                    Groups
+                  </Link>
+                  <Link
                     href="/leaderboard"
                     className="text-sm font-medium text-foreground/60 hover:text-foreground transition-colors"
                   >
