@@ -18,10 +18,12 @@ No test runner is configured. If tests are added later, update this section.
 **ALWAYS consult the `/docs` directory before writing any code.** These documentation files define **mandatory conventions** that override general practices and must be followed exactly.
 
 **Available Documentation:**
+
 - `docs/ui.md` — UI coding standards (shadcn/ui components, date formatting, inline composition patterns)
-- *(More docs will be added as the project grows)*
+- _(More docs will be added as the project grows)_
 
 **Workflow:**
+
 1. **Before starting any implementation**, check if there's a relevant doc file in `/docs`
 2. **Read the entire documentation file** to understand all conventions
 3. **Apply those standards strictly** when writing code
@@ -44,6 +46,7 @@ No test runner is configured. If tests are added later, update this section.
 All source lives under `src/` using the Next.js App Router file conventions:
 
 **App Directory:**
+
 - `src/app/layout.tsx` — root layout (fonts, global CSS, metadata, Clerk auth UI)
 - `src/app/page.tsx` — home page
 - `src/app/globals.css` — global styles; defines `--background` / `--foreground` CSS vars with dark-mode override via `@media (prefers-color-scheme: dark)`
@@ -53,6 +56,7 @@ All source lives under `src/` using the Next.js App Router file conventions:
 - `src/middleware.ts` — Clerk authentication middleware using `clerkMiddleware()`
 
 **Database:**
+
 - `src/db/schema.ts` — Drizzle ORM schema (7 tables: users, teams, venues, matches, predictions, tournament_stages, leaderboard_snapshots)
 - `src/db/index.ts` — Database connection (Neon serverless)
 - `src/db/queries.ts` — Reusable query functions and business logic
@@ -83,11 +87,13 @@ Clerk is configured using the App Router approach:
 The app uses **Drizzle ORM** with **Neon** (serverless PostgreSQL).
 
 **Key Files:**
+
 - `src/db/schema.ts` - Table definitions and relations
 - `src/db/queries.ts` - Reusable query functions
 - `DATABASE.md` - Full schema documentation
 
 **Schema Overview:**
+
 - **users** - Synced from Clerk, tracks total points
 - **tournament_stages** - 6 stages with point multipliers (1.0x to 3.0x)
 - **teams** - 48 teams in 12 groups (A-L)
@@ -97,6 +103,7 @@ The app uses **Drizzle ORM** with **Neon** (serverless PostgreSQL).
 - **leaderboard_snapshots** - Pre-computed leaderboard data
 
 **Common Commands:**
+
 ```bash
 npx drizzle-kit studio        # Open database GUI
 npx drizzle-kit generate      # Generate migration
@@ -105,11 +112,15 @@ npx tsx src/db/seed.ts        # Seed database
 ```
 
 **Environment Variable Required:**
+
 - `DATABASE_URL` - Neon PostgreSQL connection string
 
 ## Key Conventions
 
-- **Before writing any code, check the `/docs` directory for relevant standards documentation (e.g., `docs/ui.md` for UI components). These docs contain mandatory conventions that must be followed.**
+- **IMPORTANT**: **Before writing any code, ALWAYS check the `/docs` directory for relevant standards documentation (e.g., `docs/ui.md` for UI components). These docs contain mandatory conventions that must be followed.**
+
+-/docs/ui.md
+
 - Dark mode is handled via the CSS `prefers-color-scheme` media query, **not** a class-based strategy. New components should use the `--background` / `--foreground` CSS variables or Tailwind's `dark:` variant accordingly.
 - `next.config.ts` is currently empty — add Next.js options there as needed.
 - `.env*` files are gitignored. Use `.env.local` for local secrets; add a `.env.example` if new env vars are introduced.

@@ -183,12 +183,12 @@ export default async function MyPredictionsPage() {
                             variant={
                               prediction.match.status === 'live'
                                 ? 'warning'
-                                : 'default'
+                                : 'info'
                             }
                           >
                             {prediction.match.status === 'live'
                               ? 'In Progress'
-                              : 'Pending'}
+                              : 'Predicted'}
                           </Badge>
                         )}
                       </div>

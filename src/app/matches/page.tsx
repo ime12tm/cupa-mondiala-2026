@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { auth } from '@clerk/nextjs/server';
 import {
   getMatchesWithUserPredictions,
@@ -112,16 +111,15 @@ export default async function MatchesPage({ searchParams }: MatchesPageProps) {
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {matches.map((match) => (
-              <Link
+              <div
                 key={match.id}
-                href={`/matches/${match.id}`}
-                className="block transition-transform hover:scale-[1.02]"
+                className="transition-transform hover:scale-[1.02]"
               >
                 <MatchCardWithPrediction
                   match={match}
                   userId={userId}
                 />
-              </Link>
+              </div>
             ))}
           </div>
         )}

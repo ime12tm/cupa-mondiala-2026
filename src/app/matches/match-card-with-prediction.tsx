@@ -104,8 +104,21 @@ export function MatchCardWithPrediction({ match, userId }: MatchCardWithPredicti
     }
   };
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    // If click is inside form, do nothing (let form handle it)
+    const target = e.target as HTMLElement;
+    if (target.closest('form')) {
+      return;
+    }
+    // Otherwise, navigate to match detail page
+    router.push(`/matches/${match.id}`);
+  };
+
   return (
-    <Card className="h-full hover:bg-foreground/5 transition-colors cursor-pointer">
+    <Card
+      className="h-full hover:bg-foreground/5 transition-colors cursor-pointer"
+      onClick={handleCardClick}
+    >
       <CardContent className="p-6">
         {/* Header with stage and status */}
         <div className="flex items-center justify-between mb-4">
@@ -221,7 +234,11 @@ export function MatchCardWithPrediction({ match, userId }: MatchCardWithPredicti
           )
         ) : (
           // Prediction form
-          <form onSubmit={handleSubmit} className="border-t border-foreground/10 pt-4 space-y-3">
+          <form
+            onSubmit={handleSubmit}
+            onClick={(e) => e.stopPropagation()}
+            className="border-t border-foreground/10 pt-4 space-y-3"
+          >
             <div className="text-sm font-medium text-foreground/60">
               {match.userPrediction ? 'Update Prediction' : 'Make Prediction'}
             </div>
@@ -235,6 +252,7 @@ export function MatchCardWithPrediction({ match, userId }: MatchCardWithPredicti
                   max="99"
                   value={firstScore}
                   onChange={(e) => handleScoreChange(e.target.value, setFirstScore)}
+                  onClick={(e) => e.stopPropagation()}
                   disabled={isPending}
                   className="text-center text-xl font-bold h-12"
                 />
@@ -250,6 +268,7 @@ export function MatchCardWithPrediction({ match, userId }: MatchCardWithPredicti
                   max="99"
                   value={secondScore}
                   onChange={(e) => handleScoreChange(e.target.value, setSecondScore)}
+                  onClick={(e) => e.stopPropagation()}
                   disabled={isPending}
                   className="text-center text-xl font-bold h-12"
                 />
@@ -276,6 +295,7 @@ export function MatchCardWithPrediction({ match, userId }: MatchCardWithPredicti
             <Button
               type="submit"
               disabled={isPending}
+              onClick={(e) => e.stopPropagation()}
               className="w-full"
               size="sm"
             >

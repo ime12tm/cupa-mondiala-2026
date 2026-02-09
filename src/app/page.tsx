@@ -35,6 +35,25 @@ export default async function HomePage() {
     },
   });
 
+  // Filter for featured matches (Phase 2)
+  const now = new Date();
+  const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+
+  const featuredMatches = allMatches.filter((match) => {
+    const matchDate = new Date(match.scheduledAt);
+    return (
+      (match.status === 'scheduled' && matchDate <= sevenDaysFromNow) ||
+      (match.status === 'live') ||
+      (match.status === 'finished' && matchDate >= threeDaysAgo)
+    );
+  });
+
+  // Show featured matches, or first 20 if no featured matches
+  const displayMatches = featuredMatches.length > 0
+    ? featuredMatches
+    : allMatches.slice(0, 20);
+
   const getStatusBadge = (status: 'scheduled' | 'live' | 'finished') => {
     const variants = {
       scheduled: { variant: 'default' as const, label: 'Scheduled' },
@@ -150,32 +169,40 @@ export default async function HomePage() {
 
           {/* All Matches List */}
           <div>
-            <div className="mb-4">
-              <h2 className="text-xl font-bold">All Matches ({allMatches.length})</h2>
+            <div className="mb-4 flex items-center justify-between flex-wrap gap-3">
+              <h2 className="text-xl font-bold">
+                {featuredMatches.length > 0 ? 'Upcoming Matches' : 'Recent Matches'}
+                {' '}({displayMatches.length})
+              </h2>
+              <Link href="/matches">
+                <Button variant="outline" size="sm">
+                  View All {allMatches.length} Matches →
+                </Button>
+              </Link>
             </div>
 
             {/* Compact matches table */}
             <div className="space-y-1">
-              {allMatches.map((match) => (
+              {displayMatches.map((match) => (
                 <Link key={match.id} href={`/matches/${match.id}`}>
                   <div className="hover:bg-foreground/5 transition-colors cursor-pointer border border-foreground/10 rounded-lg p-3">
-                    <div className="flex items-center gap-3">
-                      {/* Status Badge */}
-                      <div className="w-20 flex-shrink-0">
+                    <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-3">
+                      {/* Status Badge - hidden on mobile, visible on desktop */}
+                      <div className="hidden md:flex md:w-20 md:flex-shrink-0">
                         {getStatusBadge(match.status as 'scheduled' | 'live' | 'finished')}
                       </div>
 
-                      {/* Date */}
-                      <div className="w-24 flex-shrink-0 text-xs text-foreground/60">
+                      {/* Date - always visible, simplified on mobile */}
+                      <div className="text-xs text-foreground/60 md:w-24 md:flex-shrink-0">
                         {formatMatchDate(new Date(match.scheduledAt))}
                       </div>
 
-                      {/* Time */}
-                      <div className="w-16 flex-shrink-0 text-xs font-medium">
+                      {/* Time - hidden on mobile, visible on desktop */}
+                      <div className="hidden md:block md:w-16 md:flex-shrink-0 text-xs font-medium">
                         {formatMatchTime(new Date(match.scheduledAt), match.venue.timezone)}
                       </div>
 
-                      {/* Teams */}
+                      {/* Teams - always visible, full width on mobile */}
                       <div className="flex-1 flex items-center justify-center gap-3">
                         <div className="flex items-center justify-end gap-2 flex-1">
                           <div className="text-right text-sm font-medium truncate">
@@ -218,8 +245,8 @@ export default async function HomePage() {
                         </div>
                       </div>
 
-                      {/* Stage & Venue */}
-                      <div className="w-48 flex-shrink-0 text-xs text-foreground/60 truncate">
+                      {/* Stage & Venue - hidden on mobile, visible on desktop */}
+                      <div className="hidden md:block md:w-48 md:flex-shrink-0 text-xs text-foreground/60 truncate">
                         {match.stage.name} • {match.venue.city}
                       </div>
                     </div>

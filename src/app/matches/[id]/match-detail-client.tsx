@@ -280,7 +280,7 @@ export function MatchDetailClient({ match, userId }: MatchDetailClientProps) {
                             htmlFor="first-score"
                             className="block text-sm font-medium mb-2 text-center"
                           >
-                            First Team Score
+                            Home Team
                           </label>
                           <Input
                             id="first-score"
@@ -302,7 +302,7 @@ export function MatchDetailClient({ match, userId }: MatchDetailClientProps) {
                             htmlFor="second-score"
                             className="block text-sm font-medium mb-2 text-center"
                           >
-                            Second Team Score
+                            Away Team
                           </label>
                           <Input
                             id="second-score"

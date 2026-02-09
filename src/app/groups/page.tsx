@@ -40,8 +40,8 @@ export default async function GroupsPage() {
           </CardContent>
         </Card>
 
-        {/* Groups Grid (4x3 layout) */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {/* Groups Grid (3 columns max) */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {allGroups.map(({ groupLetter, standings }) => (
             <Card key={groupLetter}>
               <CardHeader className="pb-3">
