@@ -175,7 +175,7 @@ export default async function HomePage() {
                 {' '}({displayMatches.length})
               </h2>
               <Link href="/matches">
-                <Button variant="outline" size="sm">
+                <Button variant="secondary" size="sm">
                   View All {allMatches.length} Matches →
                 </Button>
               </Link>
