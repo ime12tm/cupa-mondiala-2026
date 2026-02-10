@@ -2,6 +2,7 @@
 
 import { getCurrentUserIdAndSync } from '@/lib/auth';
 import { upsertPrediction, canUserPredictGroupStage } from '@/db/queries';
+import { createPredictionSchema } from '@/lib/validations';
 import { revalidatePath } from 'next/cache';
 import { db } from '@/db';
 
@@ -17,18 +18,21 @@ export async function submitPrediction(
       return { success: false, error: 'You must be logged in' };
     }
 
-    // Validation
-    if (homeScore < 0 || awayScore < 0) {
-      return { success: false, error: 'Scores must be non-negative' };
+    // Validate input with Zod
+    const validation = createPredictionSchema.safeParse({ matchId, homeScore, awayScore });
+    if (!validation.success) {
+      return {
+        success: false,
+        error: 'Invalid input',
+        issues: validation.error.issues,
+      };
     }
 
-    if (!Number.isInteger(homeScore) || !Number.isInteger(awayScore)) {
-      return { success: false, error: 'Scores must be whole numbers' };
-    }
+    const { matchId: validMatchId, homeScore: validHomeScore, awayScore: validAwayScore } = validation.data;
 
     // Check if this is a group stage match
     const match = await db.query.matches.findFirst({
-      where: (matches, { eq }) => eq(matches.id, matchId),
+      where: (matches, { eq }) => eq(matches.id, validMatchId),
       with: {
         stage: true,
       },
@@ -40,20 +44,20 @@ export async function submitPrediction(
 
     // Validate group stage predictions
     if (match.stage.slug === 'group_stage') {
-      const validation = await canUserPredictGroupStage(userId);
-      if (!validation.allowed) {
+      const groupStageValidation = await canUserPredictGroupStage(userId);
+      if (!groupStageValidation.allowed) {
         return {
           success: false,
-          error: validation.reason || 'Group stage predictions are locked',
-          progress: validation.progress,
+          error: groupStageValidation.reason || 'Group stage predictions are locked',
+          progress: groupStageValidation.progress,
         };
       }
     }
 
-    const prediction = await upsertPrediction(userId, matchId, homeScore, awayScore);
+    const prediction = await upsertPrediction(userId, validMatchId, validHomeScore, validAwayScore);
 
     // Revalidate the match page and predictions page
-    revalidatePath(`/matches/${matchId}`);
+    revalidatePath(`/matches/${validMatchId}`);
     revalidatePath('/my-predictions');
 
     return { success: true, prediction };

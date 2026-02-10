@@ -9,6 +9,7 @@ import {
   adminDeletePrediction,
   adminDeleteAllPredictions,
 } from '@/db/queries';
+import { matchResultSchema, updatePredictionAdminSchema } from '@/lib/validations';
 import { revalidatePath } from 'next/cache';
 
 export async function updateMatchResultAction(
@@ -20,30 +21,33 @@ export async function updateMatchResultAction(
   try {
     await requireAdmin();
 
-    // Validation
-    if (homeScore < 0 || awayScore < 0) {
-      return { success: false, error: 'Scores must be non-negative' };
+    // Validate input with Zod
+    const validation = matchResultSchema.safeParse({ matchId, homeScore, awayScore, status });
+    if (!validation.success) {
+      return {
+        success: false,
+        error: 'Invalid input',
+        issues: validation.error.issues,
+      };
     }
 
-    if (!Number.isInteger(homeScore) || !Number.isInteger(awayScore)) {
-      return { success: false, error: 'Scores must be whole numbers' };
-    }
+    const { matchId: validMatchId, homeScore: validHomeScore, awayScore: validAwayScore, status: validStatus } = validation.data;
 
     // Update match result
-    await updateMatchResult(matchId, homeScore, awayScore, status);
+    await updateMatchResult(validMatchId, validHomeScore, validAwayScore, validStatus);
 
     // Lock predictions for this match
-    await lockPredictionsForMatch(matchId);
+    await lockPredictionsForMatch(validMatchId);
 
     // Calculate points if match is finished
-    if (status === 'finished') {
-      await calculatePointsForMatch(matchId);
+    if (validStatus === 'finished') {
+      await calculatePointsForMatch(validMatchId);
     }
 
     // Revalidate relevant pages
-    revalidatePath(`/matches/${matchId}`);
+    revalidatePath(`/matches/${validMatchId}`);
     revalidatePath('/admin/matches');
-    revalidatePath(`/admin/matches/${matchId}`);
+    revalidatePath(`/admin/matches/${validMatchId}`);
     revalidatePath('/leaderboard');
     revalidatePath('/my-predictions');
 
@@ -69,21 +73,25 @@ export async function updatePredictionAction(
   try {
     await requireAdmin();
 
-    // Validation
-    if (updates.homeScore !== undefined && (updates.homeScore < 0 || !Number.isInteger(updates.homeScore))) {
-      return { success: false, error: 'Home score must be a non-negative integer' };
+    // Validate input with Zod
+    const validation = updatePredictionAdminSchema.safeParse({ predictionId, ...updates });
+    if (!validation.success) {
+      return {
+        success: false,
+        error: 'Invalid input',
+        issues: validation.error.issues,
+      };
     }
 
-    if (updates.awayScore !== undefined && (updates.awayScore < 0 || !Number.isInteger(updates.awayScore))) {
-      return { success: false, error: 'Away score must be a non-negative integer' };
-    }
-
-    if (updates.pointsEarned !== undefined && updates.pointsEarned !== null && updates.pointsEarned < 0) {
-      return { success: false, error: 'Points earned must be non-negative or null' };
-    }
+    const validData = validation.data;
 
     // Update prediction
-    const updated = await adminUpdatePrediction(predictionId, updates);
+    const updated = await adminUpdatePrediction(validData.predictionId, {
+      homeScore: validData.homeScore,
+      awayScore: validData.awayScore,
+      pointsEarned: validData.pointsEarned,
+      isLocked: validData.isLocked,
+    });
 
     // Revalidate relevant pages
     revalidatePath('/admin/matches');

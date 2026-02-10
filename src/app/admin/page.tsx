@@ -1,36 +1,19 @@
 import Link from 'next/link';
-import { db } from '@/db';
-import { matches } from '@/db/schema';
-import { eq, count, sql } from 'drizzle-orm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { formatMatchDate } from '@/lib/date-utils';
+import { getMatchStatistics, getMatchesByStatus } from '@/data/matches';
 import { getAllUsers } from '@/db/queries';
 import { UserPredictionsNav } from './user-predictions-nav';
 import { DangerZoneClient } from './danger-zone-client';
 
 export default async function AdminDashboardPage() {
   // Get match statistics
-  const [matchStats] = await db
-    .select({
-      total: count(),
-      scheduled: sql<number>`count(*) filter (where status = 'scheduled')`,
-      live: sql<number>`count(*) filter (where status = 'live')`,
-      finished: sql<number>`count(*) filter (where status = 'finished')`,
-    })
-    .from(matches);
+  const matchStats = await getMatchStatistics();
 
   // Get recent matches that need results
-  const recentMatches = await db.query.matches.findMany({
-    where: eq(matches.status, 'scheduled'),
-    orderBy: (matches, { asc }) => [asc(matches.scheduledAt)],
-    limit: 5,
-    with: {
-      homeTeam: true,
-      awayTeam: true,
-      stage: true,
-    },
-  });
+  const scheduledMatches = await getMatchesByStatus('scheduled');
+  const recentMatches = scheduledMatches.slice(0, 5);
 
   // Get all users for the predictions dropdown
   const allUsers = await getAllUsers();
