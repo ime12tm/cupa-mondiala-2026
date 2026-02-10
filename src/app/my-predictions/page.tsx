@@ -1,12 +1,10 @@
 import { redirect } from 'next/navigation';
 import { getCurrentUserIdAndSync } from '@/lib/auth';
 import { getUserPredictions, getUserStats } from '@/db/queries';
+import { getUserLeaderboardPosition } from '@/data/users';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatMatchDate } from '@/lib/date-utils';
-import { db } from '@/db';
-import { users } from '@/db/schema';
-import { desc, gt } from 'drizzle-orm';
 import Link from 'next/link';
 
 export default async function MyPredictionsPage() {
@@ -17,18 +15,11 @@ export default async function MyPredictionsPage() {
     redirect('/');
   }
 
-  const [predictions, statsData] = await Promise.all([
+  const [predictions, statsData, rank] = await Promise.all([
     getUserPredictions(userId),
     getUserStats(userId),
+    getUserLeaderboardPosition(userId),
   ]);
-
-  // Calculate user rank
-  const allUsers = await db
-    .select({ totalPoints: users.totalPoints })
-    .from(users)
-    .orderBy(desc(users.totalPoints));
-
-  const rank = allUsers.findIndex((u) => u.totalPoints <= statsData.totalPoints) + 1 || allUsers.length + 1;
 
   const stats = {
     ...statsData,

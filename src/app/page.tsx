@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { auth } from '@clerk/nextjs/server';
-import { db } from '@/db';
 import { Badge } from '@/components/ui/badge';
 import { formatMatchDate, formatMatchTime } from '@/lib/date-utils';
 import heroImage from '@/img/hero-img.jpg';
@@ -13,27 +12,19 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { getMatches } from '@/data/matches';
+import { getUser } from '@/data/users';
 import {
   getFirstGroupStageMatch,
   getUserGroupStagePredictionCount,
 } from '@/db/queries';
-import { users } from '@/db/schema';
-import { eq } from 'drizzle-orm';
 import { GroupStageCountdown } from './matches/group-stage-countdown';
 
 export default async function HomePage() {
   const { userId } = await auth();
 
   // Get all matches ordered by scheduled date
-  const allMatches = await db.query.matches.findMany({
-    orderBy: (matches, { asc }) => [asc(matches.scheduledAt)],
-    with: {
-      homeTeam: true,
-      awayTeam: true,
-      venue: true,
-      stage: true,
-    },
-  });
+  const allMatches = await getMatches();
 
   // Filter for featured matches (Phase 2)
   const now = new Date();
@@ -67,9 +58,7 @@ export default async function HomePage() {
   // Widget logic for group stage deadline
   let widget = null;
   if (userId) {
-    const user = await db.query.users.findFirst({
-      where: eq(users.userId, userId),
-    });
+    const user = await getUser(userId);
 
     if (user && !user.groupStageDeadlinePassed) {
       const firstMatch = await getFirstGroupStageMatch();

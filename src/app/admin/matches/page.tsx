@@ -1,11 +1,9 @@
 import Link from 'next/link';
-import { db } from '@/db';
-import { matches } from '@/db/schema';
-import { eq } from 'drizzle-orm';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatMatchDate, formatMatchTime } from '@/lib/date-utils';
+import { getMatches, getMatchesByStatus } from '@/data/matches';
 
 interface AdminMatchesPageProps {
   searchParams: Promise<{ status?: string }>;
@@ -18,16 +16,9 @@ export default async function AdminMatchesPage({
   const statusFilter = params.status as 'scheduled' | 'live' | 'finished' | undefined;
 
   // Get all matches with optional status filter
-  const allMatches = await db.query.matches.findMany({
-    where: statusFilter ? eq(matches.status, statusFilter) : undefined,
-    orderBy: (matches, { asc }) => [asc(matches.scheduledAt)],
-    with: {
-      homeTeam: true,
-      awayTeam: true,
-      venue: true,
-      stage: true,
-    },
-  });
+  const allMatches = statusFilter
+    ? await getMatchesByStatus(statusFilter)
+    : await getMatches();
 
   // Status badge function
   const getStatusBadge = (status: 'scheduled' | 'live' | 'finished') => {

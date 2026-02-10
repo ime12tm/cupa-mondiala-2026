@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getCurrentUserIdAndSync } from '@/lib/auth';
 import { getLeaderboard } from '@/db/queries';
+import { getUserPredictionStats } from '@/data/predictions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
@@ -11,9 +12,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { db } from '@/db';
-import { predictions } from '@/db/schema';
-import { eq, count, and, gte, isNotNull } from 'drizzle-orm';
 
 export default async function LeaderboardPage() {
   // Require authentication to view leaderboard
@@ -29,27 +27,14 @@ export default async function LeaderboardPage() {
   const rankings = await Promise.all(
     users.map(async (user, index) => {
       // Get prediction stats for each user
-      const userPredictions = await db.query.predictions.findMany({
-        where: eq(predictions.userId, user.userId),
-      });
-
-      const totalPredictions = userPredictions.length;
-      const completedPredictions = userPredictions.filter(
-        (p) => p.pointsEarned !== null
-      );
-      const exactScores = completedPredictions.filter(
-        (p) => p.pointsEarned! >= 3
-      ).length;
-      const correctResults = completedPredictions.filter(
-        (p) => p.pointsEarned! >= 1 && p.pointsEarned! < 3
-      ).length;
+      const stats = await getUserPredictionStats(user.userId);
 
       return {
         ...user,
         rank: index + 1,
-        totalPredictions,
-        exactScores,
-        correctResults,
+        totalPredictions: stats.totalPredictions,
+        exactScores: stats.exactScores,
+        correctResults: stats.correctResults,
       };
     })
   );

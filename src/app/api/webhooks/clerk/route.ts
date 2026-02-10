@@ -5,6 +5,7 @@ import { upsertUserFromClerk } from "@/db/queries";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { clerkUserEventSchema, clerkUserDeletedEventSchema } from "@/lib/validations";
 
 export async function POST(req: Request) {
   // Get the Webhook secret from environment
@@ -56,11 +57,18 @@ export async function POST(req: Request) {
   const eventType = evt.type;
 
   if (eventType === "user.created" || eventType === "user.updated") {
-    const { id, email_addresses, username, first_name, last_name } = evt.data;
+    // Validate webhook payload with Zod
+    const validation = clerkUserEventSchema.safeParse(evt.data);
+    if (!validation.success) {
+      console.error("Invalid webhook payload:", validation.error);
+      return new Response("Invalid webhook payload", { status: 400 });
+    }
+
+    const { id, email_addresses, username, first_name, last_name, primary_email_address_id } = validation.data;
 
     // Get primary email
     const primaryEmail = email_addresses.find(
-      (email) => email.id === evt.data.primary_email_address_id
+      (email) => email.id === primary_email_address_id
     );
 
     if (!primaryEmail) {
@@ -84,11 +92,14 @@ export async function POST(req: Request) {
   }
 
   if (eventType === "user.deleted") {
-    const { id } = evt.data;
-
-    if (!id) {
-      return new Response("No user ID found", { status: 400 });
+    // Validate webhook payload with Zod
+    const validation = clerkUserDeletedEventSchema.safeParse(evt.data);
+    if (!validation.success) {
+      console.error("Invalid webhook payload:", validation.error);
+      return new Response("Invalid webhook payload", { status: 400 });
     }
+
+    const { id } = validation.data;
 
     try {
       // Soft delete: we keep predictions but remove user data
