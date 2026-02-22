@@ -55,10 +55,10 @@ export function PredictionsTable({ predictions }: PredictionsTableProps) {
             <TableHead>User</TableHead>
             <TableHead className="text-center">Home Score</TableHead>
             <TableHead className="text-center">Away Score</TableHead>
-            <TableHead>Result</TableHead>
-            <TableHead className="text-right">Points</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Submitted</TableHead>
+            <TableHead className="hidden md:table-cell">Result</TableHead>
+            <TableHead className="text-right hidden md:table-cell">Points</TableHead>
+            <TableHead className="hidden md:table-cell">Status</TableHead>
+            <TableHead className="hidden md:table-cell">Submitted</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -67,7 +67,7 @@ export function PredictionsTable({ predictions }: PredictionsTableProps) {
             <TableRow key={prediction.id}>
               <TableCell>
                 <div>
-                  <div className="font-medium">
+                  <div className="text-sm font-medium">
                     {prediction.user.displayName ||
                       prediction.user.username ||
                       'Anonymous'}
@@ -78,15 +78,15 @@ export function PredictionsTable({ predictions }: PredictionsTableProps) {
                 </div>
               </TableCell>
               <TableCell className="text-center">
-                <span className="text-xl font-bold">{prediction.homeScore}</span>
+                <span className="text-lg md:text-xl font-bold">{prediction.homeScore}</span>
               </TableCell>
               <TableCell className="text-center">
-                <span className="text-xl font-bold">{prediction.awayScore}</span>
+                <span className="text-lg md:text-xl font-bold">{prediction.awayScore}</span>
               </TableCell>
-              <TableCell>
+              <TableCell className="hidden md:table-cell">
                 <Badge variant="default">{resultLabels[prediction.result]}</Badge>
               </TableCell>
-              <TableCell className="text-right">
+              <TableCell className="text-right hidden md:table-cell">
                 {prediction.pointsEarned !== null ? (
                   <span className="text-lg font-bold text-green-600 dark:text-green-400">
                     {prediction.pointsEarned}
@@ -95,14 +95,14 @@ export function PredictionsTable({ predictions }: PredictionsTableProps) {
                   <span className="text-foreground/40">-</span>
                 )}
               </TableCell>
-              <TableCell>
+              <TableCell className="hidden md:table-cell">
                 {prediction.isLocked ? (
                   <Badge variant="default">Locked</Badge>
                 ) : (
                   <Badge variant="info">Open</Badge>
                 )}
               </TableCell>
-              <TableCell>
+              <TableCell className="hidden md:table-cell">
                 <div className="text-sm text-foreground/60">
                   {formatMatchDate(new Date(prediction.createdAt))}
                 </div>

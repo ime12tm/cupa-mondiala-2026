@@ -122,49 +122,49 @@ export default async function MyPredictionsPage() {
                 href={`/matches/${prediction.match.id}`}
               >
                 <Card className="hover:bg-foreground/5 transition-colors cursor-pointer">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between flex-wrap gap-4">
+                  <CardContent className="p-4 sm:p-6">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                       {/* Match Info */}
-                      <div className="flex-1 min-w-[300px]">
-                        <div className="text-sm text-foreground/60 mb-2">
+                      <div className="flex-1 w-full sm:w-auto">
+                        <div className="text-xs sm:text-sm text-foreground/60 mb-2">
                           {prediction.match.stage.name} •{' '}
                           {formatMatchDate(new Date(prediction.match.scheduledAt))}
                         </div>
-                        <div className="flex items-center gap-3">
-                          <div className="font-semibold">
+                        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                          <div className="font-semibold text-sm sm:text-base">
                             {prediction.match.homeTeam?.name || 'TBD'}
                           </div>
-                          <div className="text-xl font-bold">
+                          <div className="text-lg sm:text-xl font-bold">
                             {prediction.homeScore}
                           </div>
                           <div className="text-foreground/40">-</div>
-                          <div className="text-xl font-bold">
+                          <div className="text-lg sm:text-xl font-bold">
                             {prediction.awayScore}
                           </div>
-                          <div className="font-semibold">
+                          <div className="font-semibold text-sm sm:text-base">
                             {prediction.match.awayTeam?.name || 'TBD'}
                           </div>
                         </div>
                       </div>
 
                       {/* Status and Points */}
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto justify-between sm:justify-end">
                         {prediction.match.status === 'finished' ? (
                           <>
                             <div className="text-center">
-                              <div className="text-sm text-foreground/60 mb-1">
+                              <div className="text-xs sm:text-sm text-foreground/60 mb-1">
                                 Result
                               </div>
-                              <div className="text-lg font-bold">
+                              <div className="text-base sm:text-lg font-bold">
                                 {prediction.match.homeScore} -{' '}
                                 {prediction.match.awayScore}
                               </div>
                             </div>
                             <div className="text-center">
-                              <div className="text-sm text-foreground/60 mb-1">
+                              <div className="text-xs sm:text-sm text-foreground/60 mb-1">
                                 Points
                               </div>
-                              <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                              <div className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400">
                                 {prediction.pointsEarned || 0}
                               </div>
                             </div>

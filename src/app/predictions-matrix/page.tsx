@@ -70,22 +70,22 @@ export default async function PredictionsMatrixPage({
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Color Legend</CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-wrap gap-4 text-sm">
+        <CardContent className="grid grid-cols-2 sm:flex sm:flex-wrap gap-3 sm:gap-4 text-xs sm:text-sm">
           <div className="flex items-center gap-2">
-            <div className="w-12 h-8 bg-green-100 dark:bg-green-950 border border-green-300 dark:border-green-700 rounded"></div>
-            <span>Exact Score (3 pts)</span>
+            <div className="w-8 h-6 sm:w-12 sm:h-8 bg-green-100 dark:bg-green-950 border border-green-300 dark:border-green-700 rounded flex-shrink-0"></div>
+            <span className="text-xs sm:text-sm">Exact Score (3 pts)</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-12 h-8 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded"></div>
-            <span>Correct Result (1 pt)</span>
+            <div className="w-8 h-6 sm:w-12 sm:h-8 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded flex-shrink-0"></div>
+            <span className="text-xs sm:text-sm">Correct Result (1 pt)</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-12 h-8 bg-red-100 dark:bg-red-950 border border-red-300 dark:border-red-700 rounded"></div>
-            <span>Wrong (0 pts)</span>
+            <div className="w-8 h-6 sm:w-12 sm:h-8 bg-red-100 dark:bg-red-950 border border-red-300 dark:border-red-700 rounded flex-shrink-0"></div>
+            <span className="text-xs sm:text-sm">Wrong (0 pts)</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-12 h-8 bg-foreground/5 border border-foreground/20 rounded"></div>
-            <span>No Prediction</span>
+            <div className="w-8 h-6 sm:w-12 sm:h-8 bg-foreground/5 border border-foreground/20 rounded flex-shrink-0"></div>
+            <span className="text-xs sm:text-sm">No Prediction</span>
           </div>
         </CardContent>
       </Card>
@@ -107,7 +107,7 @@ export default async function PredictionsMatrixPage({
                   <TableRow>
                     {/* First column: Match info - sticky left */}
                     <TableHead
-                      className="sticky left-0 bg-background z-20 min-w-[280px] border-r border-foreground/10"
+                      className="sticky left-0 bg-background z-20 min-w-[200px] sm:min-w-[240px] border-r border-foreground/10"
                     >
                       Match
                     </TableHead>
@@ -116,13 +116,13 @@ export default async function PredictionsMatrixPage({
                     {users.map((user) => (
                       <TableHead
                         key={user.userId}
-                        className="text-center min-w-[100px] px-2"
+                        className="text-center min-w-[80px] sm:min-w-[100px] px-1 sm:px-2"
                       >
                         <div className="flex flex-col items-center gap-1">
-                          <div className="font-medium text-xs truncate max-w-[90px]">
+                          <div className="font-medium text-xs truncate max-w-[70px] sm:max-w-[90px]">
                             {user.displayName || user.username || 'Anonymous'}
                           </div>
-                          <Badge variant="default" className="text-xs">
+                          <Badge variant="default" className="text-xs px-1">
                             {user.totalPoints} pts
                           </Badge>
                         </div>
@@ -131,7 +131,7 @@ export default async function PredictionsMatrixPage({
 
                     {/* Last column: Final result - sticky right */}
                     <TableHead
-                      className="sticky right-0 bg-background z-20 text-center min-w-[100px] border-l border-foreground/10"
+                      className="sticky right-0 bg-background z-20 text-center min-w-[80px] sm:min-w-[100px] border-l border-foreground/10"
                     >
                       Final Result
                     </TableHead>
@@ -149,7 +149,7 @@ export default async function PredictionsMatrixPage({
                           className="sticky left-0 bg-background z-10 border-r border-foreground/10 font-medium"
                         >
                           <div className="flex flex-col gap-1">
-                            <div className="text-sm">
+                            <div className="text-xs sm:text-sm">
                               {match.homeTeam?.name || match.homeTeamPlaceholder || 'TBD'}
                               {' vs '}
                               {match.awayTeam?.name || match.awayTeamPlaceholder || 'TBD'}

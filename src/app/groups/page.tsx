@@ -62,13 +62,13 @@ export default async function GroupsPage() {
                           <TableHead className="text-center w-8 p-2">
                             P
                           </TableHead>
-                          <TableHead className="text-center w-8 p-2">
+                          <TableHead className="text-center w-8 p-2 hidden sm:table-cell">
                             W
                           </TableHead>
-                          <TableHead className="text-center w-8 p-2">
+                          <TableHead className="text-center w-8 p-2 hidden sm:table-cell">
                             D
                           </TableHead>
-                          <TableHead className="text-center w-8 p-2">
+                          <TableHead className="text-center w-8 p-2 hidden sm:table-cell">
                             L
                           </TableHead>
                           <TableHead className="text-center w-10 p-2">
@@ -105,13 +105,13 @@ export default async function GroupsPage() {
                             <TableCell className="p-2 text-center text-sm">
                               {entry.played}
                             </TableCell>
-                            <TableCell className="p-2 text-center text-sm">
+                            <TableCell className="p-2 text-center text-sm hidden sm:table-cell">
                               {entry.won}
                             </TableCell>
-                            <TableCell className="p-2 text-center text-sm">
+                            <TableCell className="p-2 text-center text-sm hidden sm:table-cell">
                               {entry.drawn}
                             </TableCell>
-                            <TableCell className="p-2 text-center text-sm">
+                            <TableCell className="p-2 text-center text-sm hidden sm:table-cell">
                               {entry.lost}
                             </TableCell>
                             <TableCell className="p-2 text-center text-sm">
@@ -150,9 +150,9 @@ export default async function GroupsPage() {
           </div>
           <div className="flex flex-wrap gap-x-3 gap-y-1">
             <span>P: Played</span>
-            <span>W: Won</span>
-            <span>D: Drawn</span>
-            <span>L: Lost</span>
+            <span className="hidden sm:inline">W: Won</span>
+            <span className="hidden sm:inline">D: Drawn</span>
+            <span className="hidden sm:inline">L: Lost</span>
             <span>GD: Goal Difference</span>
             <span>Pts: Points</span>
           </div>
