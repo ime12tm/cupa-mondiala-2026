@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { db } from '@/db';
 import { users } from '@/db/schema';
 import { eq, desc } from 'drizzle-orm';
-import { getUserPredictions } from '@/db/queries';
+import { getUserPredictions } from '@/data/predictions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PredictionsTable } from '@/app/admin/matches/[id]/predictions/predictions-table';
@@ -27,7 +27,17 @@ export default async function UserPredictionsPage({
   }
 
   // Get all user predictions
-  const predictions = await getUserPredictions(userId);
+  const userPredictions = await getUserPredictions(userId);
+
+  // Add user info to predictions for table component
+  const predictions = userPredictions.map((prediction) => ({
+    ...prediction,
+    user: {
+      displayName: user.displayName,
+      username: user.username,
+      email: user.email,
+    },
+  }));
 
   // Calculate user rank
   const allUsers = await db

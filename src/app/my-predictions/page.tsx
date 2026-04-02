@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getCurrentUserIdAndSync } from '@/lib/auth';
-import { getUserPredictions, getUserStats } from '@/db/queries';
-import { getUserLeaderboardPosition } from '@/data/users';
+import { getUserPredictions } from '@/data/predictions';
+import { getUserStats, getUserLeaderboardPosition } from '@/data/users';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatMatchDate } from '@/lib/date-utils';

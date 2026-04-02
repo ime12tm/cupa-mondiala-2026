@@ -1,5 +1,5 @@
 import { auth, clerkClient } from '@clerk/nextjs/server';
-import { ensureUserExists } from '@/db/queries';
+import { ensureUserExists } from '@/data/users';
 
 /**
  * Check if the current user has admin role

@@ -1,14 +1,14 @@
 'use server';
 
 import { requireAdmin } from '@/lib/auth';
+import { updateMatchResult } from '@/data/admin/matches';
 import {
-  updateMatchResult,
   calculatePointsForMatch,
   lockPredictionsForMatch,
   adminUpdatePrediction,
   adminDeletePrediction,
   adminDeleteAllPredictions,
-} from '@/db/queries';
+} from '@/data/admin/predictions';
 import { matchResultSchema, updatePredictionAdminSchema } from '@/lib/validations';
 import { revalidatePath } from 'next/cache';
 
@@ -34,7 +34,12 @@ export async function updateMatchResultAction(
     const { matchId: validMatchId, homeScore: validHomeScore, awayScore: validAwayScore, status: validStatus } = validation.data;
 
     // Update match result
-    await updateMatchResult(validMatchId, validHomeScore, validAwayScore, validStatus);
+    await updateMatchResult({
+      matchId: validMatchId,
+      homeScore: validHomeScore,
+      awayScore: validAwayScore,
+      status: validStatus,
+    });
 
     // Lock predictions for this match
     await lockPredictionsForMatch(validMatchId);

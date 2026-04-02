@@ -12,12 +12,9 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { getMatches } from '@/data/matches';
+import { getMatches, getFirstGroupStageMatch } from '@/data/matches';
 import { getUser } from '@/data/users';
-import {
-  getFirstGroupStageMatch,
-  getUserGroupStagePredictionCount,
-} from '@/db/queries';
+import { getUserGroupStagePredictionCount } from '@/data/predictions';
 import { GroupStageCountdown } from './matches/group-stage-countdown';
 
 export default async function HomePage() {

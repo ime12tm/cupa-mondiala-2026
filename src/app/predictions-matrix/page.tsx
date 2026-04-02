@@ -3,7 +3,7 @@ import { auth } from '@clerk/nextjs/server';
 import { db } from '@/db';
 import { tournamentStages } from '@/db/schema';
 import { asc } from 'drizzle-orm';
-import { getPredictionsMatrix } from '@/db/queries';
+import { getPredictionsMatrix } from '@/data/predictions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,

@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { getCurrentUserIdAndSync } from '@/lib/auth';
-import { getLeaderboard } from '@/db/queries';
+import { getLeaderboard } from '@/data/admin/users';
 import { getUserPredictionStats } from '@/data/predictions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {

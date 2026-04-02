@@ -1,4 +1,4 @@
-import { getAllGroupsStandings } from "@/db/queries";
+import { getAllGroupsStandings } from "@/data/teams";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,

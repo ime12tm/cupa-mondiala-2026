@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { db } from '@/db';
 import { predictions } from '@/db/schema';
 import { eq } from 'drizzle-orm';
-import { getMatchById } from '@/db/queries';
+import { getMatch } from '@/data/matches';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -24,7 +24,7 @@ export default async function AdminPredictionsPage({
     notFound();
   }
 
-  const match = await getMatchById(matchId);
+  const match = await getMatch(matchId);
 
   if (!match) {
     notFound();

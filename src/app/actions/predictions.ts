@@ -1,7 +1,7 @@
 'use server';
 
 import { getCurrentUserIdAndSync } from '@/lib/auth';
-import { upsertPrediction, canUserPredictGroupStage } from '@/db/queries';
+import { upsertPrediction, canUserPredictGroupStage } from '@/data/predictions';
 import { createPredictionSchema } from '@/lib/validations';
 import { revalidatePath } from 'next/cache';
 import { db } from '@/db';

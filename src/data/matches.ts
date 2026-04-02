@@ -135,6 +135,17 @@ export async function getFirstGroupStageMatch() {
 }
 
 /**
+ * Check if the group stage deadline has passed
+ * PUBLIC DATA - Used for deadline enforcement
+ *
+ * @returns true if current time >= first match kickoff
+ */
+export async function hasGroupStageDeadlinePassed(): Promise<boolean> {
+  const firstMatch = await getFirstGroupStageMatch();
+  return new Date() >= new Date(firstMatch.scheduledAt);
+}
+
+/**
  * Get matches filtered by status
  * PUBLIC DATA - No authentication required
  *

@@ -1,9 +1,6 @@
 import { auth } from '@clerk/nextjs/server';
-import {
-  getMatchesWithUserPredictions,
-  getFirstGroupStageMatch,
-  getUserGroupStagePredictionCount,
-} from '@/db/queries';
+import { getMatchesWithUserPredictions, getUserGroupStagePredictionCount } from '@/data/predictions';
+import { getFirstGroupStageMatch } from '@/data/matches';
 import { StageFilterClient } from './stage-filter-client';
 import { MatchCardWithPrediction } from './match-card-with-prediction';
 import { GroupStageCountdown } from './group-stage-countdown';

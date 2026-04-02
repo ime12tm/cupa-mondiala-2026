@@ -57,16 +57,18 @@ All source lives under `src/` using the Next.js App Router file conventions:
 - `src/app/**/actions.ts` — Server Actions (colocated with pages, see `docs/data-mutations.md`)
 - `src/app/api/` — API routes (webhooks only, NOT for data fetching)
   - `src/app/api/webhooks/clerk/route.ts` — Clerk user sync webhook
-  - `src/app/api/test/route.ts` — Database test endpoint
-- `src/middleware.ts` — Clerk authentication middleware using `clerkMiddleware()`
 
-**Database:**
+**Database & Data Layer:**
 
 - `src/db/schema.ts` — Drizzle ORM schema (7 tables: users, teams, venues, matches, predictions, tournament_stages, leaderboard_snapshots)
 - `src/db/index.ts` — Database connection (Neon serverless)
-- `src/data/` — **Data fetching helper functions** (NEW pattern - use this for all queries)
-- `src/db/queries.ts` — Legacy query functions (migrate to `src/data/`)
 - `src/db/seed.ts` — Database seeding script
+- `src/data/` — **Data layer (use this for ALL queries and mutations)**
+  - `src/data/matches.ts` — Public match queries
+  - `src/data/predictions.ts` — User prediction queries and mutations
+  - `src/data/users.ts` — User profile queries and auth sync
+  - `src/data/teams.ts` — Team and group standings queries
+  - `src/data/admin/` — Admin-only operations (matches, predictions, users)
 - `drizzle.config.ts` — Drizzle Kit configuration
 - `drizzle/` — Auto-generated migration files
 
@@ -80,10 +82,12 @@ The app uses **Clerk** for authentication via `@clerk/nextjs`.
 
 **Key Files:**
 
-- `src/middleware.ts` - Route protection with `clerkMiddleware()`
-- `src/app/layout.tsx` - `<ClerkProvider>` wrapper
+- `src/app/layout.tsx` - `<ClerkProvider>` wrapper with auth UI components
 - `src/app/api/webhooks/clerk/route.ts` - User database sync webhook
+- `src/lib/auth.ts` - Auth helper functions (isAdmin, requireAdmin, getCurrentUserId)
 - `docs/auth.md` - **MANDATORY** authentication patterns and security
+
+**Note:** Middleware is not currently implemented. Route protection is handled at the page level using `await auth()` checks.
 
 **Environment Variables Required:**
 
@@ -109,10 +113,10 @@ The app uses **Drizzle ORM** with **Neon** (serverless PostgreSQL).
 **Key Files:**
 
 - `src/db/schema.ts` - Table definitions and relations
-- `src/data/` - Data fetching helper functions (see `docs/data-fetching.md`)
-- `src/db/queries.ts` - Legacy query functions (migrate to `src/data/`)
+- `src/data/` - **Data layer with all query and mutation functions** (see `docs/data-fetching.md` and `docs/data-mutations.md`)
 - `DATABASE.md` - Full schema documentation
 - `docs/data-fetching.md` - **MANDATORY** data fetching and security patterns
+- `docs/data-mutations.md` - **MANDATORY** data mutation patterns
 
 **Schema Overview:**
 
@@ -123,6 +127,16 @@ The app uses **Drizzle ORM** with **Neon** (serverless PostgreSQL).
 - **matches** - 104 tournament matches with timezone support
 - **predictions** - User predictions (scores + 1/X/2 result), locked at kickoff
 - **leaderboard_snapshots** - Pre-computed leaderboard data
+
+**Data Layer Architecture:**
+
+The app uses a clean separation between data access and business logic:
+
+- **Public data** (`src/data/matches.ts`, `src/data/teams.ts`) - No authentication required
+- **User-scoped data** (`src/data/predictions.ts`, `src/data/users.ts`) - Filtered by `userId`
+- **Admin-only data** (`src/data/admin/`) - Requires admin verification before access
+
+All database operations go through these data layer functions. **NEVER query the database directly from pages or components.** Server Components call data layer functions directly. Client Components call Server Actions which then call data layer functions.
 
 **Common Commands:**
 

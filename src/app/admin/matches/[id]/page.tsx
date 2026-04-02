@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { getMatchById } from '@/db/queries';
+import { getMatch } from '@/data/matches';
 import { db } from '@/db';
 import { predictions } from '@/db/schema';
 import { eq, count } from 'drizzle-orm';
@@ -24,7 +24,7 @@ export default async function AdminMatchDetailPage({
     notFound();
   }
 
-  const match = await getMatchById(matchId);
+  const match = await getMatch(matchId);
 
   if (!match) {
     notFound();

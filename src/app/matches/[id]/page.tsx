@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { auth } from '@clerk/nextjs/server';
-import { getMatchById } from '@/db/queries';
+import { getMatch } from '@/data/matches';
+import { getUserPrediction } from '@/data/predictions';
 import { MatchDetailClient } from './match-detail-client';
 
 interface MatchDetailPageProps {
@@ -16,11 +17,16 @@ export default async function MatchDetailPage({ params }: MatchDetailPageProps) 
     notFound();
   }
 
-  const match = await getMatchById(matchId, userId || undefined);
+  const match = await getMatch(matchId);
 
   if (!match) {
     notFound();
   }
 
-  return <MatchDetailClient match={match} userId={userId} />;
+  // Get user's prediction if authenticated
+  const userPrediction = userId
+    ? await getUserPrediction(userId, matchId)
+    : null;
+
+  return <MatchDetailClient match={{ ...match, userPrediction }} userId={userId} />;
 }

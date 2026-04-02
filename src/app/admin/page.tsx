@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { formatMatchDate } from '@/lib/date-utils';
 import { getMatchStatistics, getMatchesByStatus } from '@/data/matches';
-import { getAllUsers } from '@/db/queries';
+import { getAllUsers } from '@/data/admin/users';
 import { UserPredictionsNav } from './user-predictions-nav';
 import { DangerZoneClient } from './danger-zone-client';
 
