@@ -37,7 +37,7 @@ export default async function RootLayout({
           className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen bg-[#FFF5EE]`}
         >
           {/* Header */}
-          <header className="bg-black text-white border-b border-white/10">
+          <header className="sticky top-0 z-50 bg-black text-white border-b border-white/10">
             <div className="container mx-auto flex h-16 items-center justify-center px-4 relative">
               {/* Logo - absolute left */}
               <Link href="/" className="absolute left-4 text-xl font-bold text-white">
