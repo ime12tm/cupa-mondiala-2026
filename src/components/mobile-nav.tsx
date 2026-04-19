@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { SignInButton, SignUpButton } from '@clerk/nextjs';
 
 interface MobileNavProps {
   isSignedIn: boolean;
@@ -130,6 +131,24 @@ export function MobileNav({ isSignedIn, isAdmin }: MobileNavProps) {
               )}
             </ul>
           </nav>
+
+          {/* Auth Buttons - Only show if not signed in */}
+          {!isSignedIn && (
+            <div className="p-4 border-t border-white/10">
+              <div className="flex flex-col gap-3">
+                <SignInButton mode="modal">
+                  <button className="w-full px-4 py-3 text-sm font-medium text-white/80 hover:text-white hover:bg-white/5 rounded-md transition-colors text-center">
+                    Sign In
+                  </button>
+                </SignInButton>
+                <SignUpButton mode="modal">
+                  <button className="w-full px-4 py-3 text-sm font-medium bg-white text-black rounded-md hover:bg-white/90 transition-colors">
+                    Sign Up
+                  </button>
+                </SignUpButton>
+              </div>
+            </div>
+          )}
 
           {/* Footer Info */}
           <div className="p-4 border-t border-white/10">
