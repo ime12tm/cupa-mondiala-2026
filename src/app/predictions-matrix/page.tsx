@@ -182,7 +182,7 @@ export default async function PredictionsMatrixPage({
                           if (prediction.pointsEarned === null) {
                             // Match not finished yet
                             cellClasses += 'bg-foreground/5';
-                          } else if (prediction.pointsEarned === 3) {
+                          } else if (prediction.pointsEarned === 2) {
                             // Exact score - GREEN
                             cellClasses += 'bg-green-100 dark:bg-green-950 text-green-800 dark:text-green-200';
                           } else if (prediction.pointsEarned === 1) {

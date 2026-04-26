@@ -407,7 +407,7 @@ export function MatchDetailClient({ match, userId }: MatchDetailClientProps) {
           <CardContent className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-foreground/60">Exact score match:</span>
-              <span className="font-medium">3 points</span>
+              <span className="font-medium">2 points</span>
             </div>
             <div className="flex justify-between">
               <span className="text-foreground/60">Correct result only:</span>

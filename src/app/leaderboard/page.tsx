@@ -58,7 +58,7 @@ export default async function LeaderboardPage() {
             </CardHeader>
             <CardContent className="text-sm text-foreground/60">
               <div className="space-y-1">
-                <div>• Exact score: 3 points</div>
+                <div>• Exact score: 2 points</div>
                 <div>• Correct result: 1 point</div>
               </div>
             </CardContent>

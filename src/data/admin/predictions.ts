@@ -23,7 +23,7 @@ function calculateResult(homeScore: number, awayScore: number): '1' | 'X' | '2' 
 
 /**
  * Helper: Calculate points for a prediction
- * - Exact score: 3 points
+ * - Exact score: 2 points
  * - Correct result (1/X/2): 1 point
  * - Wrong: 0 points
  */
@@ -35,7 +35,7 @@ function calculatePoints(
 ): number {
   // Exact score
   if (predictedHome === actualHome && predictedAway === actualAway) {
-    return 3;
+    return 2;
   }
 
   // Correct result

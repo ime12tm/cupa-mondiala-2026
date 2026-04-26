@@ -137,7 +137,7 @@ export default async function HomePage() {
             </p>
             <div className="flex flex-wrap gap-3 justify-center text-sm">
               <div className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-lg">
-                <span className="font-semibold">3 points</span> for exact scores
+                <span className="font-semibold">2 points</span> for exact scores
               </div>
               <div className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-lg">
                 <span className="font-semibold">1 point</span> for correct results

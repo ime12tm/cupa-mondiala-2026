@@ -65,7 +65,7 @@ export const updatePredictionAdminSchema = z.object({
   predictionId: z.number().int().positive(),
   homeScore: scoreSchema.optional(),
   awayScore: scoreSchema.optional(),
-  pointsEarned: z.number().int().min(0).max(3).nullable().optional(),
+  pointsEarned: z.number().int().min(0).max(2).nullable().optional(),
   isLocked: z.boolean().optional(),
 });
 
