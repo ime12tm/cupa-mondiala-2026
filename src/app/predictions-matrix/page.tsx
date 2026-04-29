@@ -4,6 +4,8 @@ import { db } from '@/db';
 import { tournamentStages } from '@/db/schema';
 import { asc } from 'drizzle-orm';
 import { getPredictionsMatrix } from '@/data/predictions';
+import { isAdmin } from '@/lib/auth';
+import { isTournamentStarted, TOURNAMENT_START_DATE } from '@/lib/tournament';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
@@ -38,11 +40,17 @@ export default async function PredictionsMatrixPage({
   const stageId = params.stage ? parseInt(params.stage) : undefined;
   const finishedOnly = params.finished === 'true';
 
+  const [admin, tournamentStarted] = await Promise.all([isAdmin(), Promise.resolve(isTournamentStarted())]);
+  const canSeeAllPredictions = admin || tournamentStarted;
+
   // Fetch data
-  const { matches, users, predictionLookup } = await getPredictionsMatrix({
+  const { matches, users: allUsers, predictionLookup: allPredictions } = await getPredictionsMatrix({
     stageId,
     finishedOnly,
   });
+
+  const users = allUsers;
+  const predictionLookup = allPredictions;
 
   // Get all stages for filter dropdown
   const stages = await db.query.tournamentStages.findMany({
@@ -54,7 +62,9 @@ export default async function PredictionsMatrixPage({
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Predictions Matrix</h1>
         <p className="text-foreground/60">
-          View all predictions from all users for every match
+          {canSeeAllPredictions
+            ? 'View all predictions from all users for every match'
+            : 'Your predictions for every match'}
         </p>
       </div>
 
@@ -64,6 +74,28 @@ export default async function PredictionsMatrixPage({
         currentStage={stageId}
         finishedOnly={finishedOnly}
       />
+
+      {/* Pre-tournament visibility banner */}
+      {!canSeeAllPredictions && (
+        <Card className="mb-6 border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950">
+          <CardContent className="py-4 flex items-start gap-3">
+            <span className="text-amber-500 text-xl leading-none mt-0.5">🔒</span>
+            <div className="text-sm text-amber-800 dark:text-amber-200">
+              <p className="font-semibold mb-0.5">Other players&apos; predictions are hidden until the tournament begins.</p>
+              <p className="text-amber-700 dark:text-amber-300">
+                You can see your own predictions below. All predictions will be revealed on{' '}
+                <strong>
+                  {TOURNAMENT_START_DATE.toLocaleDateString('en-GB', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                  })}
+                </strong>.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Legend Card */}
       <Card className="mb-6">
@@ -163,9 +195,9 @@ export default async function PredictionsMatrixPage({
                         {/* User prediction cells */}
                         {users.map((user) => {
                           const prediction = matchPredictions?.get(user.userId);
+                          const isOtherUser = !canSeeAllPredictions && user.userId !== userId;
 
                           if (!prediction) {
-                            // No prediction made
                             return (
                               <TableCell
                                 key={user.userId}
@@ -180,16 +212,12 @@ export default async function PredictionsMatrixPage({
                           let cellClasses = 'text-center font-medium ';
 
                           if (prediction.pointsEarned === null) {
-                            // Match not finished yet
                             cellClasses += 'bg-foreground/5';
                           } else if (prediction.pointsEarned === 2) {
-                            // Exact score - GREEN
                             cellClasses += 'bg-green-100 dark:bg-green-950 text-green-800 dark:text-green-200';
                           } else if (prediction.pointsEarned === 1) {
-                            // Correct result only - GRAY
                             cellClasses += 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200';
                           } else {
-                            // Wrong prediction - RED
                             cellClasses += 'bg-red-100 dark:bg-red-950 text-red-800 dark:text-red-200';
                           }
 
@@ -198,7 +226,9 @@ export default async function PredictionsMatrixPage({
                               key={user.userId}
                               className={cellClasses}
                             >
-                              <div className="flex flex-col items-center">
+                              <div
+                                className={`flex flex-col items-center${isOtherUser ? ' blur-sm select-none pointer-events-none' : ''}`}
+                              >
                                 <span className="text-sm font-bold">
                                   {prediction.homeScore}-{prediction.awayScore}
                                 </span>
