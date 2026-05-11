@@ -25,8 +25,8 @@ interface MatchCardWithPredictionProps {
 
 export function MatchCardWithPrediction({ match, userId }: MatchCardWithPredictionProps) {
   const router = useRouter();
-  const [firstScore, setFirstScore] = useState(match.userPrediction?.homeScore ?? 0);
-  const [secondScore, setSecondScore] = useState(match.userPrediction?.awayScore ?? 0);
+  const [firstScore, setFirstScore] = useState<string>(String(match.userPrediction?.homeScore ?? 0));
+  const [secondScore, setSecondScore] = useState<string>(String(match.userPrediction?.awayScore ?? 0));
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -52,7 +52,7 @@ export function MatchCardWithPrediction({ match, userId }: MatchCardWithPredicti
     setSuccess(null);
 
     startTransition(async () => {
-      const result = await submitPrediction(match.id, firstScore, secondScore);
+      const result = await submitPrediction(match.id, parseInt(firstScore) || 0, parseInt(secondScore) || 0);
 
       if (result.success) {
         setSuccess('Prediction saved!');
@@ -68,11 +68,15 @@ export function MatchCardWithPrediction({ match, userId }: MatchCardWithPredicti
 
   const handleScoreChange = (
     value: string,
-    setter: (val: number) => void
+    setter: (val: string) => void
   ) => {
-    const num = parseInt(value) || 0;
-    if (num >= 0 && num <= 99) {
-      setter(num);
+    if (value === '') {
+      setter('');
+      return;
+    }
+    const num = parseInt(value);
+    if (!isNaN(num) && num >= 0 && num <= 99) {
+      setter(String(num));
     }
   };
 
@@ -253,6 +257,8 @@ export function MatchCardWithPrediction({ match, userId }: MatchCardWithPredicti
                   value={firstScore}
                   onChange={(e) => handleScoreChange(e.target.value, setFirstScore)}
                   onClick={(e) => e.stopPropagation()}
+                  onFocus={() => { if (firstScore === '0') setFirstScore(''); }}
+                  onBlur={() => { if (firstScore === '') setFirstScore('0'); }}
                   disabled={isPending}
                   className="text-center text-xl font-bold h-12"
                 />
@@ -269,6 +275,8 @@ export function MatchCardWithPrediction({ match, userId }: MatchCardWithPredicti
                   value={secondScore}
                   onChange={(e) => handleScoreChange(e.target.value, setSecondScore)}
                   onClick={(e) => e.stopPropagation()}
+                  onFocus={() => { if (secondScore === '0') setSecondScore(''); }}
+                  onBlur={() => { if (secondScore === '') setSecondScore('0'); }}
                   disabled={isPending}
                   className="text-center text-xl font-bold h-12"
                 />
@@ -277,7 +285,7 @@ export function MatchCardWithPrediction({ match, userId }: MatchCardWithPredicti
 
             {/* Predicted Result */}
             <div className="text-center text-sm text-foreground/60">
-              {getPredictedResultText(firstScore, secondScore)}
+              {getPredictedResultText(parseInt(firstScore) || 0, parseInt(secondScore) || 0)}
             </div>
 
             {error && (
