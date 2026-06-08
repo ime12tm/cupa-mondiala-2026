@@ -18,6 +18,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { formatShortDate } from '@/lib/date-utils';
 import { MatrixFilters } from './matrix-filters';
+import { DualScrollTable } from './dual-scroll-table';
 
 interface PredictionsMatrixPageProps {
   searchParams: Promise<{
@@ -132,8 +133,8 @@ export default async function PredictionsMatrixPage({
       ) : (
         <Card>
           <CardContent className="p-0">
-            {/* Scrollable container with sticky headers */}
-            <div className="overflow-x-auto">
+            {/* Scrollable container with sticky headers and mirrored top scrollbar */}
+            <DualScrollTable>
               <Table>
                 <TableHeader className="sticky top-0 bg-background z-10">
                   <TableRow>
@@ -269,7 +270,7 @@ export default async function PredictionsMatrixPage({
                   })}
                 </TableBody>
               </Table>
-            </div>
+            </DualScrollTable>
           </CardContent>
         </Card>
       )}
