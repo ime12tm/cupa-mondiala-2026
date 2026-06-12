@@ -182,11 +182,13 @@ export async function calculatePointsForMatch(matchId: number) {
       })
       .where(eq(predictions.id, prediction.id));
 
-    // Update user's total points
+    // Use delta to handle re-calculation correctly when a score is corrected
+    const oldPoints = prediction.pointsEarned ?? 0;
+    const pointsDiff = points - oldPoints;
     await db
       .update(users)
       .set({
-        totalPoints: sql`${users.totalPoints} + ${points}`,
+        totalPoints: sql`${users.totalPoints} + ${pointsDiff}`,
         updatedAt: new Date(),
       })
       .where(eq(users.userId, prediction.userId));

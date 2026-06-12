@@ -127,11 +127,9 @@ export async function getUserGroupStagePredictionCount(userId: string) {
  * @returns { allowed: boolean, reason?: string, progress: { completed: number, total: 72 } }
  */
 export async function canUserPredictGroupStage(userId: string) {
-  // Check if user is admin (admins bypass all restrictions)
+  // Admins bypass all restrictions
   const { isAdmin } = await import('@/lib/auth');
-  const adminStatus = await isAdmin();
-
-  if (adminStatus) {
+  if (await isAdmin()) {
     return {
       allowed: true,
       reason: 'Admin override',
@@ -139,51 +137,23 @@ export async function canUserPredictGroupStage(userId: string) {
     };
   }
 
-  // Get user record
-  const user = await db.query.users.findFirst({
-    where: eq(users.userId, userId),
-  });
-
-  if (!user) {
-    throw new Error('User not found');
-  }
-
-  // If user joined after deadline, they're exempt
-  if (user.groupStageDeadlinePassed) {
-    return {
-      allowed: true,
-      reason: 'Joined after deadline',
-      progress: { completed: 0, total: 72 },
-    };
-  }
-
-  // Check if deadline has passed
+  // Once the group stage deadline has passed, no regular user can predict
   const { hasGroupStageDeadlinePassed } = await import('@/data/matches');
   const deadlinePassed = await hasGroupStageDeadlinePassed();
 
-  // If deadline hasn't passed yet, allow predictions
-  if (!deadlinePassed) {
+  if (deadlinePassed) {
     const progress = await getUserGroupStagePredictionCount(userId);
     return {
-      allowed: true,
+      allowed: false,
+      reason: 'Group stage predictions are locked.',
       progress,
     };
   }
 
-  // Deadline has passed - check if user completed all predictions
+  // Deadline hasn't passed — allow predictions and show progress
   const progress = await getUserGroupStagePredictionCount(userId);
-
-  if (progress.completed === 72) {
-    return {
-      allowed: true,
-      progress,
-    };
-  }
-
-  // User didn't complete all predictions before deadline
   return {
-    allowed: false,
-    reason: `You completed ${progress.completed}/72 group stage predictions before the deadline. Group stage predictions are now locked.`,
+    allowed: true,
     progress,
   };
 }
