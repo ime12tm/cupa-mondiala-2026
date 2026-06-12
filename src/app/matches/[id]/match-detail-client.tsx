@@ -21,9 +21,10 @@ interface MatchDetailClientProps {
     userPrediction?: Prediction | null;
   };
   userId: string | null;
+  groupStageLocked?: boolean;
 }
 
-export function MatchDetailClient({ match, userId }: MatchDetailClientProps) {
+export function MatchDetailClient({ match, userId, groupStageLocked }: MatchDetailClientProps) {
   const router = useRouter();
   const [firstScore, setFirstScore] = useState(match.userPrediction?.homeScore ?? 0);
   const [secondScore, setSecondScore] = useState(match.userPrediction?.awayScore ?? 0);
@@ -46,7 +47,8 @@ export function MatchDetailClient({ match, userId }: MatchDetailClientProps) {
   const isLocked =
     match.status !== 'scheduled' ||
     match.userPrediction?.isLocked ||
-    new Date() >= new Date(match.scheduledAt);
+    new Date() >= new Date(match.scheduledAt) ||
+    (!!groupStageLocked && match.stage.slug === 'group_stage');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

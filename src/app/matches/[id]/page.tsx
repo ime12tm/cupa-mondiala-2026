@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { auth } from '@clerk/nextjs/server';
-import { getMatch } from '@/data/matches';
+import { getMatch, hasGroupStageDeadlinePassed } from '@/data/matches';
 import { getUserPrediction } from '@/data/predictions';
 import { MatchDetailClient } from './match-detail-client';
 
@@ -28,5 +28,7 @@ export default async function MatchDetailPage({ params }: MatchDetailPageProps) 
     ? await getUserPrediction(userId, matchId)
     : null;
 
-  return <MatchDetailClient match={{ ...match, userPrediction }} userId={userId} />;
+  const groupStageLocked = await hasGroupStageDeadlinePassed();
+
+  return <MatchDetailClient match={{ ...match, userPrediction }} userId={userId} groupStageLocked={groupStageLocked} />;
 }

@@ -1,13 +1,10 @@
 import { auth } from '@clerk/nextjs/server';
 import { getMatchesWithUserPredictions, getUserGroupStagePredictionCount } from '@/data/predictions';
-import { getFirstGroupStageMatch } from '@/data/matches';
+import { getFirstGroupStageMatch, hasGroupStageDeadlinePassed } from '@/data/matches';
 import { StageFilterClient } from './stage-filter-client';
 import { MatchCardWithPrediction } from './match-card-with-prediction';
 import { GroupStageCountdown } from './group-stage-countdown';
 import { formatMatchDate, formatMatchTime } from '@/lib/date-utils';
-import { db } from '@/db';
-import { users } from '@/db/schema';
-import { eq } from 'drizzle-orm';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 interface MatchesPageProps {
@@ -22,62 +19,52 @@ export default async function MatchesPage({ searchParams }: MatchesPageProps) {
   const stage = (params.stage || undefined) as string | undefined;
 
   const matches = await getMatchesWithUserPredictions(userId, stage);
+  const groupStageLocked = await hasGroupStageDeadlinePassed();
 
   // Banner logic (only for logged-in users)
   let banner = null;
   if (userId) {
-    const user = await db.query.users.findFirst({
-      where: eq(users.userId, userId),
-    });
-
-    if (user && !user.groupStageDeadlinePassed) {
+    if (groupStageLocked) {
+      banner = (
+        <Alert variant="danger" className="mb-6">
+          <AlertTitle>Group Stage Predictions Locked</AlertTitle>
+          <AlertDescription>
+            Group stage predictions are now locked. You can predict knockout stage matches once the group stage is finished.
+          </AlertDescription>
+        </Alert>
+      );
+    } else {
       const firstMatch = await getFirstGroupStageMatch();
-      const deadlinePassed = new Date() >= new Date(firstMatch.scheduledAt);
       const count = await getUserGroupStagePredictionCount(userId);
-
-      if (deadlinePassed && count.completed < 72) {
-        // Locked banner
-        banner = (
-          <Alert variant="danger" className="mb-6">
-            <AlertTitle>Group Stage Predictions Locked</AlertTitle>
-            <AlertDescription>
-              You completed {count.completed}/72 group stage predictions before
-              the deadline. You can still predict knockout matches.
-            </AlertDescription>
-          </Alert>
-        );
-      } else if (!deadlinePassed) {
-        // Progress banner
-        banner = (
-          <Alert
-            variant={count.completed === 72 ? 'success' : 'default'}
-            className="mb-6"
-          >
-            <AlertTitle>
-              {count.completed === 72
-                ? '✓ All Group Stage Predictions Complete!'
-                : 'Complete Your Group Stage Predictions'}
-            </AlertTitle>
-            <AlertDescription>
-              <div>
-                Progress: {count.completed}/72 predictions
-              </div>
-              <div className="mt-2">
-                Deadline: {formatMatchDate(firstMatch.scheduledAt)} at{' '}
-                {formatMatchTime(
-                  firstMatch.scheduledAt,
-                  firstMatch.venue.timezone
-                )}
-              </div>
-              <div className="mt-1">
-                <GroupStageCountdown
-                  deadline={firstMatch.scheduledAt.toString()}
-                />
-              </div>
-            </AlertDescription>
-          </Alert>
-        );
-      }
+      banner = (
+        <Alert
+          variant={count.completed === 72 ? 'success' : 'default'}
+          className="mb-6"
+        >
+          <AlertTitle>
+            {count.completed === 72
+              ? '✓ All Group Stage Predictions Complete!'
+              : 'Complete Your Group Stage Predictions'}
+          </AlertTitle>
+          <AlertDescription>
+            <div>
+              Progress: {count.completed}/72 predictions
+            </div>
+            <div className="mt-2">
+              Deadline: {formatMatchDate(firstMatch.scheduledAt)} at{' '}
+              {formatMatchTime(
+                firstMatch.scheduledAt,
+                firstMatch.venue.timezone
+              )}
+            </div>
+            <div className="mt-1">
+              <GroupStageCountdown
+                deadline={firstMatch.scheduledAt.toString()}
+              />
+            </div>
+          </AlertDescription>
+        </Alert>
+      );
     }
   }
 
@@ -115,6 +102,7 @@ export default async function MatchesPage({ searchParams }: MatchesPageProps) {
                 <MatchCardWithPrediction
                   match={match}
                   userId={userId}
+                  groupStageLocked={groupStageLocked}
                 />
               </div>
             ))}

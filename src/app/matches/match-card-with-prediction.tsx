@@ -21,9 +21,10 @@ interface MatchCardWithPredictionProps {
     userPrediction?: Prediction | null;
   };
   userId: string | null;
+  groupStageLocked?: boolean;
 }
 
-export function MatchCardWithPrediction({ match, userId }: MatchCardWithPredictionProps) {
+export function MatchCardWithPrediction({ match, userId, groupStageLocked }: MatchCardWithPredictionProps) {
   const router = useRouter();
   const [firstScore, setFirstScore] = useState<string>(String(match.userPrediction?.homeScore ?? 0));
   const [secondScore, setSecondScore] = useState<string>(String(match.userPrediction?.awayScore ?? 0));
@@ -44,7 +45,8 @@ export function MatchCardWithPrediction({ match, userId }: MatchCardWithPredicti
   const isLocked =
     match.status !== 'scheduled' ||
     match.userPrediction?.isLocked ||
-    new Date() >= new Date(match.scheduledAt);
+    new Date() >= new Date(match.scheduledAt) ||
+    (!!groupStageLocked && match.stage.slug === 'group_stage');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
