@@ -6,6 +6,7 @@ import { getMatchStatistics, getMatchesByStatus } from '@/data/matches';
 import { getAllUsers } from '@/data/admin/users';
 import { UserPredictionsNav } from './user-predictions-nav';
 import { DangerZoneClient } from './danger-zone-client';
+import { RecalculatePointsClient } from './recalculate-client';
 
 export default async function AdminDashboardPage() {
   // Get match statistics
@@ -159,6 +160,11 @@ export default async function AdminDashboardPage() {
             </p>
           </CardContent>
         </Card>
+
+        {/* Recalculate Points */}
+        <div className="mb-8">
+          <RecalculatePointsClient />
+        </div>
 
         {/* Danger Zone */}
         <DangerZoneClient />

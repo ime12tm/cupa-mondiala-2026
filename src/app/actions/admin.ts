@@ -8,6 +8,7 @@ import {
   adminUpdatePrediction,
   adminDeletePrediction,
   adminDeleteAllPredictions,
+  recalculateAllPoints,
 } from '@/data/admin/predictions';
 import { matchResultSchema, updatePredictionAdminSchema } from '@/lib/validations';
 import { revalidatePath } from 'next/cache';
@@ -132,6 +133,31 @@ export async function deletePredictionAction(predictionId: number) {
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to delete prediction',
+    };
+  }
+}
+
+export async function recalculateAllPointsAction() {
+  try {
+    await requireAdmin();
+
+    const result = await recalculateAllPoints();
+
+    revalidatePath('/leaderboard');
+    revalidatePath('/my-predictions');
+    revalidatePath('/admin');
+    revalidatePath('/predictions-matrix');
+
+    return {
+      success: true,
+      matchesProcessed: result.matchesProcessed,
+      predictionsProcessed: result.predictionsProcessed,
+    };
+  } catch (error) {
+    console.error('Error recalculating points:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to recalculate points',
     };
   }
 }

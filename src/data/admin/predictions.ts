@@ -10,7 +10,7 @@
 
 import { db } from '@/db';
 import { predictions, matches, users, leaderboardSnapshots } from '@/db/schema';
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and, sql, isNotNull } from 'drizzle-orm';
 
 /**
  * Helper: Calculate result from scores
@@ -301,6 +301,81 @@ export async function adminDeletePrediction(predictionId: number) {
   await db.delete(predictions).where(eq(predictions.id, predictionId));
 
   return { success: true, deletedPrediction: prediction };
+}
+
+/**
+ * Admin-only: Recalculate ALL points from scratch
+ * Resets users.totalPoints to 0, then re-derives it from match results.
+ * Also corrects predictions.pointsEarned for all finished matches.
+ * Does NOT modify user prediction scores (homeScore/awayScore).
+ *
+ * SECURITY: Caller MUST verify admin status before calling this function
+ *
+ * @returns Stats about the recalculation
+ */
+export async function recalculateAllPoints() {
+  // Reset all users' totalPoints to 0
+  await db.update(users).set({ totalPoints: 0, updatedAt: new Date() });
+
+  // Get all finished matches
+  const finishedMatches = await db
+    .select()
+    .from(matches)
+    .where(eq(matches.status, 'finished'));
+
+  let matchesProcessed = 0;
+  let predictionsProcessed = 0;
+
+  for (const match of finishedMatches) {
+    if (match.homeScore === null || match.awayScore === null) continue;
+
+    const matchPredictions = await db
+      .select()
+      .from(predictions)
+      .where(eq(predictions.matchId, match.id));
+
+    for (const prediction of matchPredictions) {
+      const points = calculatePoints(
+        prediction.homeScore,
+        prediction.awayScore,
+        match.homeScore,
+        match.awayScore
+      );
+
+      await db
+        .update(predictions)
+        .set({ pointsEarned: points, updatedAt: new Date() })
+        .where(eq(predictions.id, prediction.id));
+
+      if (points > 0) {
+        await db
+          .update(users)
+          .set({
+            totalPoints: sql`${users.totalPoints} + ${points}`,
+            updatedAt: new Date(),
+          })
+          .where(eq(users.userId, prediction.userId));
+      }
+
+      predictionsProcessed++;
+    }
+
+    matchesProcessed++;
+  }
+
+  // Null out pointsEarned for predictions on non-finished matches
+  // (handles the case where a match result was later reverted)
+  await db
+    .update(predictions)
+    .set({ pointsEarned: null, updatedAt: new Date() })
+    .where(
+      and(
+        isNotNull(predictions.pointsEarned),
+        sql`${predictions.matchId} IN (SELECT id FROM matches WHERE status != 'finished')`
+      )
+    );
+
+  return { matchesProcessed, predictionsProcessed };
 }
 
 /**
