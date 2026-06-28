@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 const stages = [
   { value: '', label: 'All Stages' },
   { value: 'group_stage', label: 'Group Stage' },
+  { value: 'round_of_32', label: 'Round of 32' },
   { value: 'round_of_16', label: 'Round of 16' },
   { value: 'quarter_finals', label: 'Quarter Finals' },
   { value: 'semi_finals', label: 'Semi Finals' },
