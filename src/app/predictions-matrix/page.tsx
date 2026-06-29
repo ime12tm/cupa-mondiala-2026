@@ -135,7 +135,7 @@ export default async function PredictionsMatrixPage({
           <CardContent className="p-0">
             {/* Scrollable container with sticky headers and mirrored top scrollbar */}
             <DualScrollTable>
-              <Table>
+              <Table containerClassName="max-h-[calc(100dvh-300px)] min-h-[300px]">
                 <TableHeader className="sticky top-0 bg-background z-10">
                   <TableRow>
                     {/* First column: Match info - sticky left */}
