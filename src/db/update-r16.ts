@@ -1,60 +1,58 @@
-import { drizzle } from "drizzle-orm/neon-http";
-import { neon } from "@neondatabase/serverless";
-import * as schema from "./schema";
-import { eq } from "drizzle-orm";
 import "dotenv/config";
+import { db } from "./index";
+import { matches, teams, venues } from "./schema";
+import { eq, inArray } from "drizzle-orm";
 
-const sql = neon(process.env.DATABASE_URL!);
-const db = drizzle(sql, { schema });
-
-type MatchUpdate = {
-  matchNumber: number;
-  homeTeamPlaceholder: string;
-  awayTeamPlaceholder: string;
-  venueCity: string;
-  scheduledAt: Date;
-};
-
-const updates: MatchUpdate[] = [
-  { matchNumber: 89, homeTeamPlaceholder: "Winner GER/PAR", awayTeamPlaceholder: "Winner FRA/SWE", venueCity: "Foxborough", scheduledAt: new Date("2026-07-04T17:00:00-04:00") },
-  { matchNumber: 90, homeTeamPlaceholder: "Winner RSA/CAN", awayTeamPlaceholder: "Winner NED/MAR", venueCity: "Inglewood", scheduledAt: new Date("2026-07-04T13:00:00-07:00") },
-  { matchNumber: 91, homeTeamPlaceholder: "Winner BRA/JPN", awayTeamPlaceholder: "Winner CIV/NOR", venueCity: "Kansas City", scheduledAt: new Date("2026-07-05T16:00:00-05:00") },
-  { matchNumber: 92, homeTeamPlaceholder: "Winner Match 79", awayTeamPlaceholder: "Winner Match 80", venueCity: "Atlanta", scheduledAt: new Date("2026-07-05T20:00:00-04:00") },
-  { matchNumber: 93, homeTeamPlaceholder: "Winner Match 83", awayTeamPlaceholder: "Winner Match 84", venueCity: "Miami Gardens", scheduledAt: new Date("2026-07-06T15:00:00-04:00") },
-  { matchNumber: 94, homeTeamPlaceholder: "Winner USA/BIH", awayTeamPlaceholder: "Winner Match 82", venueCity: "Houston", scheduledAt: new Date("2026-07-06T20:00:00-05:00") },
-  { matchNumber: 95, homeTeamPlaceholder: "Winner ARG/CPV", awayTeamPlaceholder: "Winner AUS/EGY", venueCity: "Philadelphia", scheduledAt: new Date("2026-07-07T12:00:00-04:00") },
-  { matchNumber: 96, homeTeamPlaceholder: "Winner Match 85", awayTeamPlaceholder: "Winner Match 87", venueCity: "Arlington", scheduledAt: new Date("2026-07-07T16:00:00-05:00") },
-];
-
+// One-time script to update Round of 16 matches with confirmed teams, venues, and kickoff times
+// Source: https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_knockout_stage
 async function updateR16() {
-  console.log("🔄 Fetching venues...");
+  console.log("🔄 Updating Round of 16 matches...");
 
-  const allVenues = await db.select().from(schema.venues);
-  const venueIdByCity = new Map(allVenues.map((v) => [v.city, v.id]));
+  const teamCodes = ["PAR", "FRA", "CAN", "MAR", "BRA", "NOR", "MEX", "ENG", "POR", "ESP", "USA", "BEL", "ARG", "EGY", "SUI", "COL"];
+  const foundTeams = await db.select({ id: teams.id, code: teams.code }).from(teams).where(inArray(teams.code, teamCodes));
+  const teamIdByCode = new Map(foundTeams.map((t) => [t.code, t.id]));
 
-  console.log(`📋 Updating ${updates.length} Round of 16 matches...`);
+  const getTeamId = (code: string): number => {
+    const id = teamIdByCode.get(code);
+    if (!id) throw new Error(`Team not found: ${code}`);
+    return id;
+  };
+
+  const venueCities = ["Philadelphia", "Houston", "East Rutherford", "Mexico City", "Arlington", "Seattle", "Atlanta", "Vancouver"];
+  const foundVenues = await db.select({ id: venues.id, city: venues.city }).from(venues).where(inArray(venues.city, venueCities));
+  const venueIdByCity = new Map(foundVenues.map((v) => [v.city, v.id]));
+
+  const getVenueId = (city: string): number => {
+    const id = venueIdByCity.get(city);
+    if (!id) throw new Error(`Venue not found for city: ${city}`);
+    return id;
+  };
+
+  const updates = [
+    { matchNumber: 89, homeTeamCode: "PAR", awayTeamCode: "FRA", venueCity: "Philadelphia", scheduledAt: new Date("2026-07-04T17:00:00-04:00") },
+    { matchNumber: 90, homeTeamCode: "CAN", awayTeamCode: "MAR", venueCity: "Houston", scheduledAt: new Date("2026-07-04T12:00:00-05:00") },
+    { matchNumber: 91, homeTeamCode: "BRA", awayTeamCode: "NOR", venueCity: "East Rutherford", scheduledAt: new Date("2026-07-05T16:00:00-04:00") },
+    { matchNumber: 92, homeTeamCode: "MEX", awayTeamCode: "ENG", venueCity: "Mexico City", scheduledAt: new Date("2026-07-05T18:00:00-06:00") },
+    { matchNumber: 93, homeTeamCode: "POR", awayTeamCode: "ESP", venueCity: "Arlington", scheduledAt: new Date("2026-07-06T14:00:00-05:00") },
+    { matchNumber: 94, homeTeamCode: "USA", awayTeamCode: "BEL", venueCity: "Seattle", scheduledAt: new Date("2026-07-06T17:00:00-07:00") },
+    { matchNumber: 95, homeTeamCode: "ARG", awayTeamCode: "EGY", venueCity: "Atlanta", scheduledAt: new Date("2026-07-07T12:00:00-04:00") },
+    { matchNumber: 96, homeTeamCode: "SUI", awayTeamCode: "COL", venueCity: "Vancouver", scheduledAt: new Date("2026-07-07T13:00:00-07:00") },
+  ];
 
   for (const u of updates) {
-    const venueId = venueIdByCity.get(u.venueCity);
-
-    if (!venueId) {
-      console.error(`❌ Venue not found for city: "${u.venueCity}" (match ${u.matchNumber})`);
-      continue;
-    }
-
     await db
-      .update(schema.matches)
+      .update(matches)
       .set({
-        homeTeamId: null,
-        awayTeamId: null,
-        homeTeamPlaceholder: u.homeTeamPlaceholder,
-        awayTeamPlaceholder: u.awayTeamPlaceholder,
-        venueId,
+        homeTeamId: getTeamId(u.homeTeamCode),
+        awayTeamId: getTeamId(u.awayTeamCode),
+        homeTeamPlaceholder: null,
+        awayTeamPlaceholder: null,
+        venueId: getVenueId(u.venueCity),
         scheduledAt: u.scheduledAt,
       })
-      .where(eq(schema.matches.matchNumber, u.matchNumber));
+      .where(eq(matches.matchNumber, u.matchNumber));
 
-    console.log(`  ✅ Match ${u.matchNumber}: ${u.homeTeamPlaceholder} vs ${u.awayTeamPlaceholder} @ ${u.venueCity}`);
+    console.log(`  ✅ Match ${u.matchNumber}: ${u.homeTeamCode} vs ${u.awayTeamCode} @ ${u.venueCity}`);
   }
 
   console.log("✨ Round of 16 update completed!");
