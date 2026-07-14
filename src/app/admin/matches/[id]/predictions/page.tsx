@@ -4,11 +4,13 @@ import { db } from '@/db';
 import { predictions } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { getMatch } from '@/data/matches';
+import { getAllUsersByName } from '@/data/admin/users';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatMatchDate } from '@/lib/date-utils';
 import { PredictionsTable } from './predictions-table';
+import { AddPredictionForm } from './add-prediction-form';
 
 interface AdminPredictionsPageProps {
   params: Promise<{ id: string }>;
@@ -38,6 +40,12 @@ export default async function AdminPredictionsPage({
     },
     orderBy: (predictions, { desc }) => [desc(predictions.createdAt)],
   });
+
+  // For the admin "add/overwrite prediction" form
+  const allUsers = await getAllUsersByName();
+  const existingPredictionsByUserId = Object.fromEntries(
+    allPredictions.map((p) => [p.userId, { homeScore: p.homeScore, awayScore: p.awayScore }])
+  );
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -73,6 +81,15 @@ export default async function AdminPredictionsPage({
             )}
           </CardContent>
         </Card>
+
+        {/* Add/Overwrite Prediction */}
+        <div className="mb-8">
+          <AddPredictionForm
+            matchId={matchId}
+            users={allUsers}
+            existingPredictionsByUserId={existingPredictionsByUserId}
+          />
+        </div>
 
         {/* Predictions Table */}
         {allPredictions.length === 0 ? (

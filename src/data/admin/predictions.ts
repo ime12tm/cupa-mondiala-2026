@@ -268,6 +268,63 @@ export async function adminUpdatePrediction(
 }
 
 /**
+ * Admin-only: Create or overwrite a prediction on behalf of a user
+ * Bypasses the match-scheduled and prediction-lock checks that apply to
+ * normal users, so admins can enter picks for users who missed the deadline.
+ * Does not touch isLocked or pointsEarned - use adminUpdatePrediction for that.
+ *
+ * SECURITY: Caller MUST verify admin status before calling this function
+ *
+ * @param data - Target user/match and the scores to record
+ * @returns The created or updated prediction
+ */
+export async function adminUpsertPrediction(data: {
+  userId: string;
+  matchId: number;
+  homeScore: number;
+  awayScore: number;
+}) {
+  const result = calculateResult(data.homeScore, data.awayScore);
+
+  const existing = await db.query.predictions.findFirst({
+    where: and(
+      eq(predictions.userId, data.userId),
+      eq(predictions.matchId, data.matchId)
+    ),
+  });
+
+  if (existing) {
+    const [updated] = await db
+      .update(predictions)
+      .set({
+        homeScore: data.homeScore,
+        awayScore: data.awayScore,
+        result,
+        updatedAt: new Date(),
+      })
+      .where(eq(predictions.id, existing.id))
+      .returning();
+
+    return updated;
+  }
+
+  const [created] = await db
+    .insert(predictions)
+    .values({
+      userId: data.userId,
+      matchId: data.matchId,
+      homeScore: data.homeScore,
+      awayScore: data.awayScore,
+      result,
+      isLocked: false,
+      pointsEarned: null,
+    })
+    .returning();
+
+  return created;
+}
+
+/**
  * Admin-only: Delete a prediction by ID
  * Removes the points from user's total if prediction had points
  *

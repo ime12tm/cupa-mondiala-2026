@@ -6,11 +6,16 @@ import {
   calculatePointsForMatch,
   lockPredictionsForMatch,
   adminUpdatePrediction,
+  adminUpsertPrediction,
   adminDeletePrediction,
   adminDeleteAllPredictions,
   recalculateAllPoints,
 } from '@/data/admin/predictions';
-import { matchResultSchema, updatePredictionAdminSchema } from '@/lib/validations';
+import {
+  matchResultSchema,
+  updatePredictionAdminSchema,
+  setPredictionForUserSchema,
+} from '@/lib/validations';
 import { revalidatePath } from 'next/cache';
 
 export async function updateMatchResultAction(
@@ -111,6 +116,43 @@ export async function updatePredictionAction(
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to update prediction',
+    };
+  }
+}
+
+export async function setPredictionForUserAction(input: {
+  matchId: number;
+  userId: string;
+  homeScore: number;
+  awayScore: number;
+}) {
+  try {
+    await requireAdmin();
+
+    const validation = setPredictionForUserSchema.safeParse(input);
+    if (!validation.success) {
+      return {
+        success: false,
+        error: 'Invalid input',
+        issues: validation.error.issues,
+      };
+    }
+
+    const prediction = await adminUpsertPrediction(validation.data);
+
+    revalidatePath('/admin/matches');
+    revalidatePath(`/admin/matches/${validation.data.matchId}`);
+    revalidatePath(`/admin/matches/${validation.data.matchId}/predictions`);
+    revalidatePath(`/admin/users/${validation.data.userId}/predictions`);
+    revalidatePath('/leaderboard');
+    revalidatePath('/predictions-matrix');
+
+    return { success: true, prediction };
+  } catch (error) {
+    console.error('Error setting prediction for user:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to set prediction',
     };
   }
 }

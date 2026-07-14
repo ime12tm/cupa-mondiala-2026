@@ -76,6 +76,16 @@ export const deletePredictionAdminSchema = z.object({
   predictionId: z.number().int().positive(),
 });
 
+/**
+ * Set (create or overwrite) a prediction on behalf of a user (admin only)
+ */
+export const setPredictionForUserSchema = z.object({
+  matchId: z.number().int().positive(),
+  userId: z.string().min(1),
+  homeScore: scoreSchema,
+  awayScore: scoreSchema,
+});
+
 // ============================================================================
 // WEBHOOK SCHEMAS
 // ============================================================================
