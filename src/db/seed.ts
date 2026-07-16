@@ -1562,8 +1562,8 @@ async function seed() {
     {
       matchNumber: 103,
       stageSlug: "third_place",
-      homeTeamPlaceholder: "L101",
-      awayTeamPlaceholder: "L102",
+      homeTeamCode: "FRA",
+      awayTeamCode: "ENG",
       venueCity: "Miami Gardens",
       scheduledAt: new Date("2026-07-18T17:00:00-04:00"),
       status: "scheduled",
@@ -1572,8 +1572,8 @@ async function seed() {
     {
       matchNumber: 104,
       stageSlug: "final",
-      homeTeamPlaceholder: "W101",
-      awayTeamPlaceholder: "W102",
+      homeTeamCode: "ESP",
+      awayTeamCode: "ARG",
       venueCity: "East Rutherford",
       scheduledAt: new Date("2026-07-19T15:00:00-04:00"),
       status: "scheduled",
